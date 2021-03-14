@@ -17,9 +17,9 @@
 ### $Date$
 ################################################################################
 
-#' Simulate "hhh4ZI" Count Time Series
+#' @title Simulate "hhh4ZI" Count Time Series
 #'
-#' This function is the equivalent of \code{surveillance::simulate.hhh4} for model fits of class
+#' @description This function is the equivalent of \code{surveillance::simulate.hhh4} for model fits of class
 #' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 #' same as in \code{surveillance::simulate.hhh4}.
 #'
