@@ -254,7 +254,6 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #' summary(fit)
 #' sim_data <- simulate(fit, simplify = FALSE)
 #' @export
-
 hhh4ZI.sts <- function(stsObj,
                        control = list(
                          ar = list(f = ~ -1,        # a formula "exp(x'lamba)*y_t-lag" (ToDo: matrix)
@@ -657,13 +656,13 @@ interpretControl <- function (control, stsObj)
   if(ar$isMatrix) stop("matrix-form of 'control$ar$f' is not implemented")
   if(ar$inModel) # ar$f is a formula
     all.term <- cbind(all.term,
-                      checkFormula(ar$f, 1, control$data, stsObj))
+                      surveillance:::checkFormula(ar$f, 1, control$data, stsObj))
   if(ne$inModel)
     all.term <- cbind(all.term,
-                      checkFormula(ne$f, 2, control$data, stsObj))
+                      surveillance:::checkFormula(ne$f, 2, control$data, stsObj))
   if(end$inModel)
     all.term <- cbind(all.term,
-                      checkFormula(end$f,3, control$data, stsObj))
+                      surveillance:::checkFormula(end$f,3, control$data, stsObj))
 
 
   zi.formula <- if(zi$lag[1] >0){
@@ -678,7 +677,7 @@ interpretControl <- function (control, stsObj)
 
   if(zi$inModel)
     all.term <- cbind(all.term,
-                      checkFormula(zi.formula, 4, control$data, stsObj))
+                      surveillance:::checkFormula(zi.formula, 4, control$data, stsObj))
 
   dim.fe <- sum(unlist(all.term["dim.fe",]))
   dim.re.group <- unlist(all.term["dim.re",], use.names=FALSE)
@@ -970,65 +969,6 @@ ri <- function(type=c("iid","car"),
                  mult=mult
   )
   return(result)
-}
-
-### check specification of formula
-## f: one of the component formulae (ar$f, ne$f, or end$f)
-## component: 1, 2, or 3, corresponding to the ar/ne/end component, respectively
-## data: the data-argument of hhh4()
-## stsObj: the stsObj is not used directly in checkFormula, but in fe() and ri()
-checkFormula <- function(f, component, data, stsObj)
-{
-  term <- terms.formula(f, specials=c("fe","ri"))
-
-  # check if there is an overall intercept
-  intercept.all <- attr(term, "intercept") == 1
-
-  # list of variables in the component
-  vars <- as.list(attr(term,"variables"))[-1] # first element is "list"
-  nVars <- length(vars)
-
-  # begin with intercept
-  res <- if (intercept.all) {
-    c(fe(1), list(offsetComp=component))
-  } else {
-    if (nVars==0)
-      stop("formula ", deparse(substitute(f)), " contains no variables")
-    NULL
-  }
-
-  # find out fixed effects without "fe()" specification
-  # (only if there are variables in addition to an intercept "1")
-  fe.raw <- setdiff(seq_len(nVars), unlist(attr(term, "specials")))
-
-  # evaluate covariates
-  for(i in fe.raw)
-    res <- cbind(res, c(
-      eval(substitute(fe(x), list(x=vars[[i]])), envir=data),
-      list(offsetComp=component)
-    ))
-
-  # fixed effects
-  for(i in attr(term, "specials")$fe)
-    res <- cbind(res, c(
-      eval(vars[[i]], envir=data),
-      list(offsetComp=component)
-    ))
-
-  res <- cbind(res, deparse.level=0) # ensure res has matrix dimensions
-
-  # random intercepts
-  RI <- attr(term, "specials")$ri
-  if (sum(unlist(res["intercept",])) + length(RI) > 1)
-    stop("There can only be one intercept in the formula ",
-         deparse(substitute(f)))
-  for(i in RI)
-    res <- cbind(res, c(
-      eval(vars[[i]], envir=data),
-      list(offsetComp=component)
-    ))
-
-  return(res)
 }
 
 gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)

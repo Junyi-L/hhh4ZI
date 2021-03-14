@@ -24,7 +24,6 @@
 #' same as in \code{surveillance::simulate.hhh4}.
 #'
 #' @export
-
 simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
                            nsim=1, # number of replicates to simulate
                            seed=NULL,
