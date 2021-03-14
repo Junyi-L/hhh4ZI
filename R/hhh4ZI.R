@@ -177,6 +177,14 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #' \code{control}, which are both part of the returned
 #' \code{"hhh4ZI"} object).}
 #' }
+#' @param check.analyticals {logical (or a subset of
+#' \code{c("numDeriv", "maxLik")}), indicating if (how) the implemented
+#' analytical score vector and Fisher information matrix should be
+#' checked against numerical derivatives at the parameter starting values,
+#' using the packages \pkg{numDeriv} and/or \pkg{maxLik}. If activated,
+#' \code{hhh4} will return a list containing the analytical and numerical
+#' derivatives for comparison (no ML estimation will be performed).
+#' This is mainly intended for internal use by the package developers.}
 #'
 #' @return \code{hhh4ZI} returns an object of class \code{"hhh4ZI"},
 #' which is a list containing the following components:
@@ -275,7 +283,7 @@ hhh4ZI.sts <- function(stsObj,
                                       sd.corr = NULL),
                          data = list(t = stsObj@epoch - min(stsObj@epoch)), # named list of covariates
                          keep.terms = FALSE  # whether to keep interpretControl(control, stsObj)
-                       )
+                       ), check.analyticals = FALSE
 ){
   ptm <- proc.time()
   ## check control and set default values (for missing arguments)
@@ -301,7 +309,17 @@ hhh4ZI.sts <- function(stsObj,
   if(any(gamma == 0, na.rm=TRUE) || any(gamma == 1, na.rm=TRUE))
     stop("some gamma is degenerate (0 or 1) at initial values")
 
-
+  ## check score vector and fisher information at starting values
+  check.analyticals <- if (isTRUE(check.analyticals)) {
+    if (length(theta.start) > 50) "maxLik" else "numDeriv"
+  } else if (is.character(check.analyticals)) {
+    match.arg(check.analyticals, c("numDeriv", "maxLik"), several.ok=TRUE)
+  } else NULL
+  if (length(check.analyticals) > 0L) {
+    resCheck <- checkAnalyticals(model, theta.start, Sigma.start,
+                                 methods=check.analyticals)
+    return(resCheck)
+  }
   #-------------------------------------------------------------------
   ## maximize loglikelihood (penalized and marginal)
   ## maximize loglikelihood (penalized and marginal)
@@ -639,13 +657,13 @@ interpretControl <- function (control, stsObj)
   if(ar$isMatrix) stop("matrix-form of 'control$ar$f' is not implemented")
   if(ar$inModel) # ar$f is a formula
     all.term <- cbind(all.term,
-                      surveillance:::checkFormula(ar$f, 1, control$data, stsObj))
+                      checkFormula(ar$f, 1, control$data, stsObj))
   if(ne$inModel)
     all.term <- cbind(all.term,
-                      surveillance:::checkFormula(ne$f, 2, control$data, stsObj))
+                      checkFormula(ne$f, 2, control$data, stsObj))
   if(end$inModel)
     all.term <- cbind(all.term,
-                      surveillance:::checkFormula(end$f,3, control$data, stsObj))
+                      checkFormula(end$f,3, control$data, stsObj))
 
 
   zi.formula <- if(zi$lag[1] >0){
@@ -660,7 +678,7 @@ interpretControl <- function (control, stsObj)
 
   if(zi$inModel)
     all.term <- cbind(all.term,
-                      surveillance:::checkFormula(zi.formula, 4, control$data, stsObj))
+                      checkFormula(zi.formula, 4, control$data, stsObj))
 
   dim.fe <- sum(unlist(all.term["dim.fe",]))
   dim.re.group <- unlist(all.term["dim.re",], use.names=FALSE)
@@ -801,8 +819,217 @@ interpretControl <- function (control, stsObj)
   return(result)
 }
 
-fe <- surveillance:::fe
-ri <- surveillance:::ri
+# used to incorporate covariates and unit-specific effects
+fe <- function(x,          # covariate
+               unitSpecific = FALSE, # TRUE means which = rep.int(TRUE, nUnits)
+               which=NULL, # NULL = overall, vector with booleans = unit-specific
+               initial=NULL) # vector of inital values for parameters
+{
+  stsObj <- get("stsObj", envir=parent.frame(1), inherits=TRUE) #checkFormula()
+  nTime <- nrow(stsObj)
+  nUnits <- ncol(stsObj)
+
+  if(!is.numeric(x)){
+    stop("Covariate \'",deparse(substitute(x)),"\' is not numeric\n")
+  }
+  lengthX <- length(x)
+  if(lengthX == 1){
+    terms <- matrix(x, nTime, nUnits, byrow=FALSE)
+    mult <- "*"
+  } else if(lengthX == nTime){
+    terms <- matrix(x, nTime, nUnits, byrow=FALSE)
+    mult <- "*"
+  } else if(lengthX == nTime*nUnits){
+    if(!is.matrix(x)){
+      stop("Covariate \'",deparse(substitute(x)),"\' is not a matrix\n")
+    }
+    # check dimensions of covariate
+    if((ncol(x) != nUnits) | (nrow(x) != nTime)){
+      stop("Dimension of covariate \'",deparse(substitute(x)),"\' is not suitably specified\n")
+    }
+    terms <- x
+    mult <- "*"
+  } else {
+    stop("Covariate \'",deparse(substitute(x)),"\' is not suitably specified\n")
+  }
+
+  intercept <- all(terms==1)
+
+  # overall or unit-specific effect?
+  unitSpecific <- unitSpecific || !is.null(which)
+  if (unitSpecific) {
+    if (is.null(which)) {
+      which <- rep.int(TRUE, nUnits)
+    } else {
+      stopifnot(is.vector(which, mode="logical"), length(which) == nUnits)
+    }
+
+    terms[,!which] <- 0
+  }
+
+  # get dimension of parameter
+  dim.fe <- if (unitSpecific) sum(which) else 1
+
+  # check length of initial values + set default values
+  if (is.null(initial)) {
+    initial <- rep.int(0,dim.fe)
+  } else if (length(initial) != dim.fe) {
+    stop("initial values for '",deparse(substitute(x)),"' must be of length ",dim.fe)
+  }
+
+  name <- deparse(substitute(x))
+  if (unitSpecific)
+    name <- paste(name, colnames(stsObj)[which], sep=".")
+
+  result <- list(terms=terms,
+                 name=name,
+                 Z.intercept=NULL,
+                 which=which,
+                 dim.fe=dim.fe,
+                 initial.fe=initial,
+                 dim.re=0,
+                 dim.var=0,
+                 initial.var=NULL,
+                 initial.re=NULL,
+                 intercept=intercept,
+                 unitSpecific=unitSpecific,
+                 random=FALSE,
+                 corr=FALSE,
+                 mult=mult
+  )
+  return(result)
+}
+
+# random intercepts
+ri <- function(type=c("iid","car"),
+               corr=c("none","all"),
+               initial.fe=0,
+               initial.var=-.5,
+               initial.re=NULL)
+{
+  stsObj <- get("stsObj", envir=parent.frame(1), inherits=TRUE) #checkFormula()
+  if (ncol(stsObj) == 1)
+    stop("random intercepts require a multivariate 'stsObj'")
+  type <- match.arg(type)
+  corr <- match.arg(corr)
+  corr <- switch(corr,
+                 "none"=FALSE,
+                 "all"=TRUE)
+
+  if(type=="iid"){
+    Z <- 1
+    dim.re <- ncol(stsObj)
+    mult <- "*"
+  } else if(type=="car"){ # construct penalty matrix K
+    K <- neighbourhood(stsObj)
+    checkNeighbourhood(K)
+    K <- K == 1                         # indicate first-order neighbours
+    ne <- colSums(K)                    # number of first-order neighbours
+    K <- -1*K
+    diag(K) <- ne
+
+    dimK <- nrow(K)
+
+    # check rank of the nhood, only connected neighbourhoods are allowed
+    if(qr(K)$rank != dimK-1) stop("neighbourhood matrix contains islands")
+    # singular-value decomposition of K
+    svdK <- svd(K)
+    # just use the positive eigenvalues  of K in descending order
+    # for a the factorisation of the penalty matrix K = LL'
+    L <- svdK$u[,-dimK] %*% diag(sqrt(svdK$d[-dimK]))            #* only use non-zero eigenvalues
+
+    # Z = L(L'L)^-1, which can't be simplified to Z=(L')^-1 as L is not square
+    Z <- L %*% solve(t(L)%*%L)
+
+    dim.re <- dimK - 1L
+    mult <- "%*%"
+  }
+
+  # check length of initial values + set default values
+  stopifnot(length(initial.fe) == 1, length(initial.var) == 1)
+  if (is.null(initial.re)) {
+    initial.re <- rnorm(dim.re,0,sd=sqrt(0.001))
+  } else if (length(initial.re) != dim.re) {
+    stop("'initial.re' must be of length ", dim.re)
+  }
+
+  result <- list(terms=1,
+                 name=paste("ri(",type,")",sep=""),
+                 Z.intercept=Z,
+                 which=NULL,
+                 dim.fe=1,
+                 initial.fe=initial.fe,
+                 dim.re=dim.re,
+                 dim.var=1,
+                 initial.var=initial.var,
+                 initial.re=initial.re,
+                 intercept=TRUE,
+                 unitSpecific=FALSE,
+                 random=TRUE,
+                 corr=corr,
+                 mult=mult
+  )
+  return(result)
+}
+
+### check specification of formula
+## f: one of the component formulae (ar$f, ne$f, or end$f)
+## component: 1, 2, or 3, corresponding to the ar/ne/end component, respectively
+## data: the data-argument of hhh4()
+## stsObj: the stsObj is not used directly in checkFormula, but in fe() and ri()
+checkFormula <- function(f, component, data, stsObj)
+{
+  term <- terms.formula(f, specials=c("fe","ri"))
+
+  # check if there is an overall intercept
+  intercept.all <- attr(term, "intercept") == 1
+
+  # list of variables in the component
+  vars <- as.list(attr(term,"variables"))[-1] # first element is "list"
+  nVars <- length(vars)
+
+  # begin with intercept
+  res <- if (intercept.all) {
+    c(fe(1), list(offsetComp=component))
+  } else {
+    if (nVars==0)
+      stop("formula ", deparse(substitute(f)), " contains no variables")
+    NULL
+  }
+
+  # find out fixed effects without "fe()" specification
+  # (only if there are variables in addition to an intercept "1")
+  fe.raw <- setdiff(seq_len(nVars), unlist(attr(term, "specials")))
+
+  # evaluate covariates
+  for(i in fe.raw)
+    res <- cbind(res, c(
+      eval(substitute(fe(x), list(x=vars[[i]])), envir=data),
+      list(offsetComp=component)
+    ))
+
+  # fixed effects
+  for(i in attr(term, "specials")$fe)
+    res <- cbind(res, c(
+      eval(vars[[i]], envir=data),
+      list(offsetComp=component)
+    ))
+
+  res <- cbind(res, deparse.level=0) # ensure res has matrix dimensions
+
+  # random intercepts
+  RI <- attr(term, "specials")$ri
+  if (sum(unlist(res["intercept",])) + length(RI) > 1)
+    stop("There can only be one intercept in the formula ",
+         deparse(substitute(f)))
+  for(i in RI)
+    res <- cbind(res, c(
+      eval(vars[[i]], envir=data),
+      list(offsetComp=component)
+    ))
+
+  return(res)
+}
 
 gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
 {
@@ -1955,3 +2182,41 @@ fitHHH4ZI <- function(theta, sd.corr, model,
        convergence=convergence, dim=c(fixed=dimFE.d.O,random=dimRE))
 
 }
+
+## check analytical score functions and Fisher informations for
+## a given model (the result of interpretControl(control, stsObj))
+## and given parameters theta (regression par.) and sd.corr (variance par.).
+## This is a wrapper around functionality of the numDeriv and maxLik packages.
+checkAnalyticals <- function (model,
+                              theta = model$initialTheta,
+                              sd.corr = model$initialSigma,
+                              methods = c("numDeriv","maxLik"))
+{
+  cat("\nPenalized log-likelihood:\n")
+  resCheckPen <- sapply(methods, function(derivMethod) {
+    if (requireNamespace(derivMethod)) {
+      do.call(paste("checkDerivatives", derivMethod, sep="."),
+              args=alist(penLogLik, penScore, penFisher, theta,
+                         sd.corr=sd.corr, model=model))
+    }
+  }, simplify=FALSE, USE.NAMES=TRUE)
+  if (length(resCheckPen) == 1L) resCheckPen <- resCheckPen[[1L]]
+
+  resCheckMar <- if (length(sd.corr) == 0L) list() else {
+    cat("\nMarginal log-likelihood:\n")
+    fisher.unpen <- attr(penFisher(theta, sd.corr, model, attributes=TRUE),
+                         "fisher")
+    resCheckMar <- sapply(methods, function(derivMethod) {
+      if (requireNamespace(derivMethod)) {
+        do.call(paste("checkDerivatives", derivMethod, sep="."),
+                args=alist(marLogLik, marScore, marFisher, sd.corr,
+                           theta=theta, model=model, fisher.unpen=fisher.unpen))
+      }
+    }, simplify=FALSE, USE.NAMES=TRUE)
+    if (length(resCheckMar) == 1L) resCheckMar[[1L]] else resCheckMar
+  }
+
+  list(pen = resCheckPen, mar = resCheckMar)
+}
+checkDerivatives.numDeriv <- surveillance:::checkDerivatives.numDeriv
+checkDerivatives.maxLik <- surveillance:::checkDerivatives.maxLik

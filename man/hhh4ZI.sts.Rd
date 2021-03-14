@@ -14,7 +14,8 @@ and Neighbourhood Structure}
     list(stop = list(tol = 1e-05, niter = 100), regression = list(method = "nlminb"),
     variance = list(method = "Nelder-Mead")), verbose = FALSE, start = list(fixed = NULL,
     random = NULL, sd.corr = NULL),      data = list(t = stsObj@epoch -
-    min(stsObj@epoch)), keep.terms = FALSE)
+    min(stsObj@epoch)), keep.terms = FALSE),
+  check.analyticals = FALSE
 )
 }
 \arguments{
@@ -166,6 +167,15 @@ reconstructed by the \code{\link{terms}}-method for class
 \code{control}, which are both part of the returned
 \code{"hhh4ZI"} object).}
 }}
+
+\item{check.analyticals}{{logical (or a subset of
+\code{c("numDeriv", "maxLik")}), indicating if (how) the implemented
+analytical score vector and Fisher information matrix should be
+checked against numerical derivatives at the parameter starting values,
+using the packages \pkg{numDeriv} and/or \pkg{maxLik}. If activated,
+\code{hhh4} will return a list containing the analytical and numerical
+derivatives for comparison (no ML estimation will be performed).
+This is mainly intended for internal use by the package developers.}}
 }
 \value{
 \code{hhh4ZI} returns an object of class \code{"hhh4ZI"},
