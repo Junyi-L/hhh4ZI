@@ -1,6 +1,24 @@
+################################################################################
+### The following are modified versions of functions from the surveillance package
+### and wrappers around them.
+### See below the original copyright declaration.
+################################################################################
+
+################################################################################
+### Copyright declaration from the surveillance package:
+### Part of the surveillance package, http://surveillance.r-forge.r-project.org
+### Free software under the terms of the GNU General Public License, version 2,
+### a copy of which is available at http://www.r-project.org/Licenses/.
+###
+### hhh4 is an extended version of algo.hhh for the sts-class
+### The function allows the incorporation of random effects and covariates.
+###
+### Copyright (C) 2010-2012 Michaela Paul, 2012-2016,2019-2021 Sebastian Meyer
+### $Revision$
+### $Date$
+################################################################################
+
 ADVICEONERROR <- "\n  Try different starting values, more iterations, or another optimizer.\n"
-
-
 hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 
 hhh4ZI.sts <- function(stsObj,
@@ -16,7 +34,7 @@ hhh4ZI.sts <- function(stsObj,
                                    normalize = FALSE), # w_ji -> w_ji / rowSums(w_ji), after scaling
                          end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
                                     offset = 1),    # optional multiplicative offset e_it
-                         zi = list(f = ~-1,     
+                         zi = list(f = ~-1,
                                    lag = 1,
                                    lag.unitSpecific = FALSE# can be a scalar or vector
                          ),
@@ -24,7 +42,7 @@ hhh4ZI.sts <- function(stsObj,
                          subset = 2:nrow(stsObj),   # epidemic components require Y_{t-lag}
                          optimizer = list(stop = list(tol = 1e-5, niter = 100), # control arguments
                                           regression = list(method = "nlminb"), # for optimization
-                                          variance = list(method = "Nelder-Mead")), 
+                                          variance = list(method = "Nelder-Mead")),
                          verbose = FALSE,           # level of reporting during optimization
                          start = list(fixed = NULL, # list of start values, replacing initial
                                       random = NULL,  # values from fe() and ri() in 'f'ormulae
@@ -36,27 +54,27 @@ hhh4ZI.sts <- function(stsObj,
   ptm <- proc.time()
   ## check control and set default values (for missing arguments)
   control <- setControl(control, stsObj)
-  
+
   ## get model terms
   model <- interpretControl(control, stsObj)
   dimFixedEffects <- model$nFE + model$nd + model$nOverdisp
   dimRandomEffects <- model$nRE
-  
+
   ## starting values
   #* -> better default values possible
   theta.start <- model$initialTheta
   Sigma.start <- model$initialSigma
-  
+
   # check if initial values are valid
   # CAVE: there might be NA's in mu if there are missing values in Y
   mu <- surveillance:::meanHHH(theta.start, model, total.only=TRUE)
   if(any(mu==0, na.rm=TRUE) || any(is.infinite(mu)))
     stop("some mean is degenerate (0 or Inf) at initial values")
-  
+
   gamma <- gammaZero(theta.start, model)
   if(any(gamma == 0, na.rm=TRUE) || any(gamma == 1, na.rm=TRUE))
     stop("some gamma is degenerate (0 or 1) at initial values")
-  
+
 
   #-------------------------------------------------------------------
   ## maximize loglikelihood (penalized and marginal)
@@ -66,17 +84,17 @@ hhh4ZI.sts <- function(stsObj,
                        cntrl.regression = control$optimizer$regression,
                        cntrl.variance   = control$optimizer$variance,
                        verbose=control$verbose)
-  
-  
+
+
   ## extract parameter estimates
   convergence <- myoptim$convergence == 0
   thetahat <- myoptim$theta
-  
+
   # fitted value
   mu <- surveillance:::meanHHH(thetahat, model, total.only=TRUE)
   gamma <- gammaZero(thetahat, model, subset = model$subset, d = 0)
   mean <- (1 - gamma) * mu
-  
+
   if (dimRandomEffects>0) {
     Sigma.orig <- myoptim$sd.corr
     Sigma.trans <- getSigmai(head(Sigma.orig,model$nVar),
@@ -88,11 +106,11 @@ hhh4ZI.sts <- function(stsObj,
   } else {
     Sigma.orig <- Sigma.trans <- NULL
   }
-  
+
   # compute covariance matrices of regression and variance parameters
   cov <- try(solve(myoptim$fisher), silent=TRUE)
   Sigma.cov <- if(dimRandomEffects>0) try(solve(myoptim$fisherVar), silent=TRUE)
-  
+
   # check for degenerate fisher info
   if(inherits(cov, "try-error")){ # fisher info is singular
     if (control$verbose)
@@ -115,7 +133,7 @@ hhh4ZI.sts <- function(stsObj,
               "\n  Overdispersion parameter close to zero; maybe try a Poisson model.\n"
             } else ADVICEONERROR)
   }
-  
+
   ## gather results in a list -> "hhh4" object
   result <- list(coefficients = thetahat,
                  se=if (convergence) sqrt(diag(cov)), cov=cov,
@@ -144,7 +162,7 @@ hhh4ZI.sts <- function(stsObj,
   }
   class(result) <- c("hhh4ZI","hhh4")
   return(result)
-  
+
 }
 
 setControl <- function (control, stsObj)
@@ -153,22 +171,22 @@ setControl <- function (control, stsObj)
   nTime <- nrow(stsObj)
   nUnit <- ncol(stsObj)
   if(nTime <= 2) stop("too few observations")
-  
+
   ## arguments in 'control' override any corresponding default arguments
   defaultControl <- eval(formals(hhh4ZI.sts)$control)
   environment(defaultControl$ar$f) <- environment(defaultControl$ne$f) <-
     environment(defaultControl$end$f) <-
     environment(defaultControl$zi$f)<- .GlobalEnv
   control <- modifyList(defaultControl, control)
-  
+
   if(!(control$family %in% c("NegBin1", "NegBinM")))
     stop("control$family must be either NegBin1 or NegBinM")
-  
+
   ## check that component specifications are list objects
   for (comp in c("ar", "ne", "end", "zi")) {
     if(!is.list(control[[comp]])) stop("'control$", comp, "' must be a list")
   }
-  
+
   ## check lags in "ar" and "ne" components
   for (comp in c("ar", "ne")) {
     if (!surveillance:::isScalar(control[[comp]]$lag) || control[[comp]]$lag < (comp=="ar"))
@@ -176,14 +194,14 @@ setControl <- function (control, stsObj)
            if (comp=="ar") "positive" else "non-negative", " integer")
     control[[comp]]$lag <- as.integer(control[[comp]]$lag)
   }
-  
+
   # chek lags in "zi" component, it can be a vector
   if (!is.vector(control$zi$lag, mode = "numeric") & !is.null(control$zi$lag))
     stop("'control$zi$lag' must be a non-negative integer")
   control[["zi"]]$lag <- as.integer(control[["zi"]]$lag)
-  
+
   ### check AutoRegressive component
-  
+
   if (control$ar$isMatrix <- is.matrix(control$ar$f)) {
     ## this form is not implemented -> will stop() in interpretControl()
     if (any(dim(control$ar$f) != nUnit))
@@ -205,14 +223,14 @@ setControl <- function (control, stsObj)
   } else {
     stop("'control$ar$f' must be either a formula or a matrix")
   }
-  
-  
+
+
   ### check NEighbourhood component
-  
+
   if (!inherits(control$ne$f, "formula"))
     stop("'control$ne$f' must be a formula")
   control$ne$inModel <- surveillance:::isInModel(control$ne$f)
-  
+
   if (control$ne$inModel) {
     if (nUnit == 1)
       stop("\"ne\" component requires a multivariate 'stsObj'")
@@ -238,23 +256,23 @@ setControl <- function (control, stsObj)
   } else {
     control$ne[c("weights", "scale", "normalize")] <- list(NULL, NULL, FALSE)
   }
-  
-  
+
+
   ### check ENDemic component
-  
+
   if (!inherits(control$end$f, "formula"))
     stop("'control$end$f' must be a formula")
   control$end$inModel <- surveillance:::isInModel(control$end$f)
-  
-  
+
+
   ### check zero component
   if (!inherits(control$zi$f, "formula"))
     stop("'control$zi$f' must be a formula")
   control$zi$inModel <- surveillance:::isInModel(control$zi$f)
-  
-  
+
+
   ### check offsets
-  
+
   for (comp in c("ar", "ne", "end")) {
     if (is.matrix(control[[comp]]$offset) && is.numeric(control[[comp]]$offset)){
       if (!identical(dim(control[[comp]]$offset), dim(stsObj)))
@@ -267,16 +285,16 @@ setControl <- function (control, stsObj)
            nTime, "x", nUnit, " matrix")
     }
   }
-  
-  
+
+
   ### stop if no component is included in the model
-  
+
   if (length(comps <- componentsHHH4ZI(list(control=control))) == 0L)
     stop("none of the components 'ar', 'ne', 'end', 'zi' is included in the model")
-  
-  
+
+
   ### check remaining components of the control list
-  
+
   if (is.factor(control$family)) {
     stopifnot(length(control$family) == nUnit)
     ## guard against misuse as family = factor("Poisson"), e.g., if taken
@@ -292,26 +310,26 @@ setControl <- function (control, stsObj)
   } else {
     control$family <- match.arg(control$family, defaultControl$family)
   }
-  
+
   if (!is.vector(control$subset, mode="numeric") ||
       !all(control$subset %in% seq_len(nTime)))
     stop("'control$subset' must be %in% 1:", nTime)
-  lags <- c(ar = control$ar$lag, ne = control$ne$lag, 
+  lags <- c(ar = control$ar$lag, ne = control$ne$lag,
             zi = suppressWarnings(max(control$zi$lag)))
   maxlag <- suppressWarnings(max(lags[names(lags) %in% comps])) # could be -Inf
   if (control$subset[1L] <= maxlag) {
     warning("'control$subset' should be > ", maxlag, " due to epidemic lags")
   }
-  
+
   if (!is.list(control$optimizer) ||
       any(! sapply(c("stop", "regression", "variance"),
                    function(x) is.list(control$optimizer[[x]]))))
     stop("'control$optimizer' must be a list of lists")
-  
+
   control$verbose <- as.integer(control$verbose)
   if (length(control$verbose) != 1L || control$verbose < 0)
     stop("'control$verbose' must be a logical or non-negative numeric value")
-  
+
   stopifnot(is.list(control$start))
   control$start <- local({
     defaultControl$start[] <- control$start[names(defaultControl$start)]
@@ -321,9 +339,9 @@ setControl <- function (control, stsObj)
                   FUN = function(x) is.null(x) || is.vector(x, mode="numeric"),
                   FUN.VALUE = TRUE, USE.NAMES = FALSE)))
     stop("'control$start' must be a list of numeric start values")
-  
+
   stopifnot(length(control$keep.terms) == 1L, is.logical(control$keep.terms))
-  
+
   ## Done
   return(control)
 }
@@ -343,10 +361,10 @@ interpretControl <- function (control, stsObj)
 {
   nTime <- nrow(stsObj)
   nUnits <- ncol(stsObj)
-  
+
   Y <- observed(stsObj)
-  
-  
+
+
   ##########################################################################
   ##  get the model specifications for each of the three components
   ##########################################################################
@@ -355,25 +373,25 @@ interpretControl <- function (control, stsObj)
   end <- control$end
   zi <- control$zi
   ziTrue <- !is.null(zi)
-  
+
   ## for backwards compatibility with surveillance < 1.8-0, where the ar and ne
   ## components of the control object did not have an offset
   if (is.null(ar$offset)) ar$offset <- 1
   if (is.null(ne$offset)) ne$offset <- 1
   ## for backward compatibility with surveillance < 1.9-0
   if (is.null(ne$normalize)) ne$normalize <- FALSE
-  
+
   ## create list of offsets of the three components
   Ym1 <- rbind(matrix(NA_integer_, ar$lag, nUnits), head(Y, nTime-ar$lag))
   Ym1.ne <- surveillance:::neOffsetFUN(Y, ne$weights, ne$scale, ne$normalize,
                                        neighbourhood(stsObj), control$data, ne$lag, ne$offset)
-  offsets <- list(ar=ar$offset * Ym1, ne = Ym1.ne, 
+  offsets <- list(ar=ar$offset * Ym1, ne = Ym1.ne,
                   end = end$offset)
   ## -> offsets$zi and offsets$ar are offset * Y_t-lag
   ## -> offsets$ne is a function of the parameter vector 'd', which returns a
   ##    nTime x nUnits matrix -- or 0 (scalar) if there is no NE component
   ## -> offsets$end might just be 1 (scalar)
-  
+
   ## Initial parameter vector 'd' of the neighbourhood weight function
   initial.d <- if (is.list(ne$weights)) ne$weights$initial else numeric(0L)
   dim.d <- length(initial.d)
@@ -382,58 +400,58 @@ interpretControl <- function (control, stsObj)
       if (dim.d==1L) "d" else paste0("d", seq_len(dim.d))
     } else names(initial.d))
   }
-  
+
   ## determine all NA's
   isNA <- is.na(Y)
   if (ar$inModel)
     isNA <- isNA | is.na(offsets[[1L]])
   if (ne$inModel)
     isNA <- isNA | is.na(offsets[[2L]](initial.d))
-  
+
   ## get terms for all components
   all.term <- NULL
   if(ar$isMatrix) stop("matrix-form of 'control$ar$f' is not implemented")
   if(ar$inModel) # ar$f is a formula
-    all.term <- cbind(all.term, 
+    all.term <- cbind(all.term,
                       surveillance:::checkFormula(ar$f, 1, control$data, stsObj))
   if(ne$inModel)
-    all.term <- cbind(all.term, 
+    all.term <- cbind(all.term,
                       surveillance:::checkFormula(ne$f, 2, control$data, stsObj))
   if(end$inModel)
-    all.term <- cbind(all.term, 
+    all.term <- cbind(all.term,
                       surveillance:::checkFormula(end$f,3, control$data, stsObj))
-  
-  
+
+
   zi.formula <- if(zi$lag[1] >0){
-    
-    update.formula(zi$f, 
+
+    update.formula(zi$f,
                    as.formula(paste("~ . +",
                                     paste0("fe(AR(", zi$lag, ")",
                                            ", unitSpecific =", zi$lag.unitSpecific, ")",
                                            collapse = " + "),
                                     collapse = "+"))
     )} else zi$f
-  
+
   if(zi$inModel)
-    all.term <- cbind(all.term, 
+    all.term <- cbind(all.term,
                       surveillance:::checkFormula(zi.formula, 4, control$data, stsObj))
-  
+
   dim.fe <- sum(unlist(all.term["dim.fe",]))
   dim.re.group <- unlist(all.term["dim.re",], use.names=FALSE)
   dim.re <- sum(dim.re.group)
   dim.var <- sum(unlist(all.term["dim.var",]))
   dim.corr <- sum(unlist(all.term["corr",]))
-  
+
   if(dim.corr>0){
     if(dim.var!=dim.corr) stop("Use corr=\'all\' or corr=\'none\' ")
     dim.corr <- switch(dim.corr,0,1,3,6)
   }
-  
+
   # the vector with dims of the random effects must be equal if they are correlated
   if(length(unique(dim.re.group[dim.re.group>0]))!=1 & dim.corr>0){
     stop("Correlated effects must have same penalty")
   }
-  
+
   n <- c("ar","ne","end", "zi")[unlist(all.term["offsetComp",])]
   names.fe <- names.var <- names.re <- character(0L)
   for(i in seq_along(n)){
@@ -450,7 +468,7 @@ interpretControl <- function (control, stsObj)
   }
   index.fe <- rep(1:ncol(all.term), times=unlist(all.term["dim.fe",]))
   index.re <- rep(1:ncol(all.term), times=unlist(all.term["dim.re",]))
-  
+
   # poisson or negbin model
   if(identical(control$family, "Poisson")){
     ddistr <- function(y,mu,size){
@@ -487,9 +505,9 @@ interpretControl <- function (control, stsObj)
       paste0("-log(", paste("overdisp", levels(index.overdisp), sep = "."), ")")
     }
   }
-  
+
   environment(ddistr) <- getNamespace("stats")  # function is self-contained
-  
+
   # parameter start values from fe() and ri() calls via checkFormula()
   initial <- list(
     fixed = c(unlist(all.term["initial.fe",]),
@@ -503,7 +521,7 @@ interpretControl <- function (control, stsObj)
   names(initial$fixed) <- c(names.fe, names.d, names.overdisp)
   names(initial$random) <- names.re
   names(initial$sd.corr) <- c(names.var, head(paste("corr",1:4,sep="."), dim.corr))
-  
+
   # modify initial values according to the supplied 'start' values
   initial[] <- mapply(
     FUN = function (initial, start, name) {
@@ -526,7 +544,7 @@ interpretControl <- function (control, stsObj)
     initial, control$start[names(initial)], names(initial),
     SIMPLIFY = FALSE, USE.NAMES = FALSE
   )
-  
+
   # Done
   result <- list(response = Y,
                  terms = all.term,
@@ -566,25 +584,25 @@ gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
   pars <- surveillance:::splitParams(theta, model)
   fixed <- pars$fixed
   random <- pars$random
-  
+
   ## unpack model
   term <- model$terms
   nGroups <- model$nGroups
-  
+
   comp <- unlist(term["offsetComp",])
   idxFE <- model$indexFE
   idxRE <- model$indexRE
-  
+
   toMatrix <- function (x, r=model$nTime, c=model$nUnits)
     matrix(x, r, c, byrow=TRUE)
-  
+
   unitNames <- dimnames(model$response)[[2L]]
-  
+
   setColnames <- if (is.null(unitNames)) identity else
     function(x) "dimnames<-"(x, list(NULL, unitNames))
-  
+
   pred <- nullMatrix <- toMatrix(0)
-  
+
   for(i in seq_len(nGroups)[comp==4]){
     #browser()
     fe <- fixed[idxFE==i]
@@ -611,7 +629,7 @@ gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
       if(d == 2) gprime2(x) else
         pred
   return(res)
-  
+
 }
 gprime <- function(x) exp(x)/(exp(x) + 1)^2
 gprime2 <- function(x) exp(x) * (1 - exp(x))/(exp(x) + 1)^3
@@ -619,13 +637,13 @@ gprime2 <- function(x) exp(x) * (1 - exp(x))/(exp(x) + 1)^3
 penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALSE)
 {
   if(any(is.na(theta))) stop("NAs in regression parameters.", ADVICEONERROR)
-  
+
   ## unpack model
   subset <- model$subset
   Y <- model$response[subset,,drop=FALSE]
   dimPsi <- model$nOverdisp
   dimRE <- model$nRE
-  
+
   ## unpack random effects
   if (dimRE > 0) {
     pars <- surveillance:::splitParams(theta, model)
@@ -635,13 +653,13 @@ penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALS
     dimBlock <- model$rankRE[model$rankRE>0]
     Sigma.inv <- getSigmaInv(sd, corr, model$nVar, dimBlock)
   }
-  
+
   ############################################################
-  
+
   ## evaluate dispersion
   psi <- surveillance:::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
-  
+
   #psi might be numerically equal to 0 or Inf in which cases dnbinom (in meanHHH)
   #would return NaN (with a warning). The case size=Inf rarely happens and
   #corresponds to a Poisson distribution. Currently this case is not handled
@@ -650,34 +668,34 @@ penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALS
   #zero if x=0 and mu>0 and mu<Inf. Thus, if there is at least one case in Y
   #(x>0, which is always true), we have that sum(ll.units) = -Inf, hence:
   if (any(psi == 0)) return(-Inf)
-  
+
   ## evaluate mean
   mu <- surveillance:::meanHHH(theta, model, total.only=TRUE)
   # if, numerically, mu=Inf, log(dnbinom) or log(dpois) both equal -Inf, hence:
   #if (any(is.infinite(mu))) return(-Inf)
   # however, since mu=Inf does not produce warnings below and this is a rare
   # case, it is faster to not include this conditional expression
-  
+
   # evaluate gamma
   gamma <- if(model$ziTrue) gammaZero(theta, model) else 0
-  
+
   ## penalization term for random effects
   lpen <- if (dimRE==0) 0 else { # there are random effects
     ##-.5*(t(randomEffects)%*%Sigma.inv%*%randomEffects)
     ## the following implementation takes ~85% less computing time !
     -0.5 * c(crossprod(randomEffects, Sigma.inv) %*% randomEffects)
   }
-  
+
   ## log-likelihood
   ll.individ <- log(gamma * (Y == 0) + (1 - gamma) * exp(model$family(Y,mu,psi)))
   # in model$family, log = TRUE
   if(individual) return(ll.individ)
   ll.units <- .colSums(ll.individ,
                        length(subset), model$nUnits, na.rm=TRUE)
-  
+
   ## penalized log-likelihood
   ll <- sum(ll.units) + lpen
-  
+
   ## Done
   if (attributes) {
     attr(ll, "loglik") <- ll.units
@@ -691,7 +709,7 @@ penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALS
 penScore <- function(theta, sd.corr, model, individual = FALSE)
 {
   if(any(is.na(theta))) stop("NAs in regression parameters.", ADVICEONERROR)
-  
+
   ## unpack model
   subset <- model$subset
   Y <- model$response[subset,,drop=FALSE]
@@ -701,7 +719,7 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
   term <- model$terms
   nGroups <- model$nGroups
   dimd <- model$nd
-  
+
   ## unpack parameters
   pars <- surveillance:::splitParams(theta, model)
   if (dimRE > 0) {
@@ -711,26 +729,26 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
     dimBlock <- model$rankRE[model$rankRE>0]
     Sigma.inv <- getSigmaInv(sd, corr, model$nVar, dimBlock)
   }
-  
+
   ## evaluate dispersion
   psi <- surveillance:::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
-  
+
   ## evaluate mean
   mu <- surveillance:::meanHHH(theta, model)
   meanTotal <- mu$mean
-  
-  ## evaluate gamma 
+
+  ## evaluate gamma
   gamma <- gammaZero(theta, model)
-  
-  # evaluate logLik 
+
+  # evaluate logLik
   llZi <- penLogLik(theta, sd.corr, model, attributes=FALSE, individual = TRUE)
-  
+
   # hhh part density
   llHHH <- model$family(Y,meanTotal,psi)
   # in model$family, log = TRUE
   ############################################################
-  
+
   ## helper function for derivatives, hhh part
   derivHHH.factor <- if(dimPsi > 0L){ # NegBin
     psiPlusMu <- psi + meanTotal    # also used below for calculation of grPsi
@@ -740,24 +758,24 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
     Y/meanTotal - 1
   }
   derivHHH <- function (dmu) derivHHH.factor * dmu
-  
+
   ## helper function for zero part
-  derivZero.factor <- exp(-llZi + llHHH) * (1 - gamma) 
+  derivZero.factor <- exp(-llZi + llHHH) * (1 - gamma)
   derivZero <- function(dllHHH) derivZero.factor * dllHHH
-  
+
   derivGamma.factor <- exp(-llZi) * ((Y == 0) - exp(llHHH))
   derivGamma <-  function(dgammaZero) derivGamma.factor * dgammaZero
-  
+
   score_list <- list()
   score_list$terms <- vector(mode = "list", length = nGroups)
   # individual scores for gamma is not needed in calculation for fisher
   gamma1 <- gammaZero(theta, model, subset = model$subset, d = 1)
   mean.comp <- mu[c("epi.own","epi.neighbours","endemic")]
   ## go through groups of parameters and compute the gradient of each component
-  
+
   grad.fe <- numeric(0L)
   grad.re <- numeric(0L)
-  
+
   for(i in seq_len(nGroups)){
     comp <- term["offsetComp",i][[1]]
     Xit<- term["terms",i][[1]] # eiter 1 or a matrix with values
@@ -767,7 +785,7 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
     if(comp != 4){
       dTheta_HHH <- derivHHH(mean.comp[[comp]]*Xit) # time * region
       dTheta_HHH[isNA] <- 0   # dTheta must not contain NA's (set NA's to 0)
-      dTheta <- derivZero(dTheta_HHH) 
+      dTheta <- derivZero(dTheta_HHH)
       score_list$terms[[i]] <- dTheta_HHH
       if(term["unitSpecific",i][[1]]){
         which <- term["which",i][[1]]
@@ -776,25 +794,25 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
           dTheta <- dTheta[,which,drop=FALSE]
         dTheta <- .colSums(dTheta, length(subset), dimi)
         grad.fe <- c(grad.fe,dTheta)
-        
+
       }  else if(term["random",i][[1]]){
         Z <- term["Z.intercept",i][[1]]
         "%m%" <- get(term["mult",i][[1]])
         dThetamZ <- dTheta %m% Z
         dRTheta <- .colSums(dThetamZ, length(subset), term["dim.re",i][[1]])
-        # region specific 
+        # region specific
         grad.re <- c(grad.re, dRTheta)
         grad.fe <- c(grad.fe, sum(dTheta))
         # intercept
       } else{
         grad.fe <- c(grad.fe, sum(dTheta))
       }
-      
+
     } else{
       dgammaZero <- gamma1 * Xit
       dgammaZero[isNA] <- 0   # dTheta must not contain NA's (set NA's to 0)
-      dsgamma <- derivGamma(dgammaZero) 
-      
+      dsgamma <- derivGamma(dgammaZero)
+
       if(term["unitSpecific",i][[1]]){
         which <- term["which",i][[1]]
         dimi <- sum(which)
@@ -815,13 +833,13 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
     }
   } # for loop
   gradients <- list(fe=grad.fe, re=grad.re)
-  
-  
-  
+
+
+
   # mu["epi.own"] = lambda_rt * y_r,t-1
   # mu["epi.neighbours"] = phi_rt * sum(omega_qr * y_q,r-1)
   # mu["endemic"] = nu_rt
-  
+
   ## gradient for parameter vector of the neighbourhood weights
   # grd <- if (dimd > 0L) {
   #   dneOffset <- model$offset[[2L]](pars$d, type="gradient")
@@ -829,22 +847,22 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
   #   onescore.d <- function (dneoff) {
   #     dmudd <- mu$ne.exppred * dneoff[subset,,drop=FALSE]
   #     grd.terms <- derivHHH(dmudd)
-  #     grd.termsZi <- derivZero(grd.terms) 
+  #     grd.termsZi <- derivZero(grd.terms)
   #     if(individual) grd.termsZi else sum(grd.termsZi, na.rm=TRUE)
   #   }
   #   if(individual){
-  #     score_list$d <- clapply(dneOffset, onescore.d) 
+  #     score_list$d <- clapply(dneOffset, onescore.d)
   #     numeric(0L)
   #   }else unlist(clapply(dneOffset, onescore.d), recursive=FALSE, use.names=FALSE)
   # } else numeric(0L)
-  
+
   grd <- if (dimd > 0L & !individual) {
     dneOffset <- model$offset[[2L]](pars$d, type="gradient")
     ##<- this is always a list (of length dimd) of matrices
     onescore.d <- function (dneoff) {
       dmudd <- mu$ne.exppred * dneoff[subset,,drop=FALSE]
       grd.terms <- derivHHH(dmudd)
-      grd.termsZi <- derivZero(grd.terms) 
+      grd.termsZi <- derivZero(grd.terms)
       sum(grd.termsZi, na.rm=TRUE)
     }
     unlist(clapply(dneOffset, onescore.d), recursive=FALSE, use.names=FALSE)
@@ -857,38 +875,38 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
       grd.terms[is.na(grd.terms)] <- 0
       grd.terms
     }
-    score_list$d <- clapply(dneOffset, onescore.d.HHH) 
+    score_list$d <- clapply(dneOffset, onescore.d.HHH)
   }
-  
+
   ## gradient for overdispersion parameter psi
   grPsi <- if(dimPsi > 0L){
     dPsiMat <- psi * (digamma(Y+psi) - digamma(psi) + log(psi) + 1
                       - log(psiPlusMu) - psiYpsiMu)
-    dPsiMatZi <- derivZero(dPsiMat) 
+    dPsiMatZi <- derivZero(dPsiMat)
     score_list$Psi <- dPsiMat
     surveillance:::.colSumsGrouped(dPsiMatZi, model$indexPsi)
   } else numeric(0L)
-  
+
   ## add penalty to random effects gradient
   s.pen <- if(dimRE > 0) c(Sigma.inv %*% randomEffects) else numeric(0L)
   if(length(gradients$re) != length(s.pen))
     stop("oops... lengths of s(b) and Sigma.inv %*% b do not match")
   grRandom <- c(gradients$re - s.pen)
-  
+
   res <- c(gradients$fe, grd, grPsi, grRandom)
-  
+
   ## Done
   if(individual){
     return(score_list) # individual scores are not penalized
   } else return(res)
-  
+
 }
 ##------------------------------------------------------------------------
 
 penFisher <- function(theta, sd.corr, model, attributes=FALSE)
 {
   if(any(is.na(theta))) stop("NAs in regression parameters.", ADVICEONERROR)
-  
+
   ## unpack model
   subset <- model$subset
   Y <- model$response[subset,,drop=FALSE]
@@ -902,7 +920,7 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
   idxFE <- model$indexFE
   idxRE <- model$indexRE
   indexPsi <- model$indexPsi
-  
+
   ## unpack parameters
   pars <- surveillance:::splitParams(theta, model)
   if (dimRE > 0) {
@@ -912,31 +930,31 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
     dimBlock <- model$rankRE[model$rankRE>0]
     Sigma.inv <- getSigmaInv(sd, corr, model$nVar, dimBlock)
   }
-  
+
   ## evaluate dispersion
   psi <- surveillance:::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
-  
+
   ## evaluate mean
   mu <- surveillance:::meanHHH(theta, model)
   meanTotal <- mu$mean
-  
+
   # evaluate individual score
   score_list <- penScore(theta, sd.corr, model, individual = TRUE)
-  
-  ## evaluate gamma 
+
+  ## evaluate gamma
   gamma <- gammaZero(theta, model)
   gamma1 <- gammaZero(theta, model, subset = model$subset, d = 1)
   gamma2 <- gammaZero(theta, model, subset = model$subset, d = 2)
-  # evaluate logLik 
+  # evaluate logLik
   llZi <- penLogLik(theta, sd.corr, model, attributes=FALSE, individual = TRUE)
-  
+
   # hhh part density
   llHHH <- model$family(Y,meanTotal,psi)
   # in model$family, log = TRUE
-  
+
   ############################################################
-  
+
   ## helper functions for derivatives:
   if (dimPsi > 0L) { # negbin
     psiPlusY <- psi + Y
@@ -964,28 +982,28 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
     dTheta_l * dTheta_k * deriv2HHH.fac1 + dTheta_lk * deriv2HHH.fac2
   }
   deriv2HHHZi <- function(score_i, score_j, deriv2_ij){
-    # (1 - gamma) * exp(llHHH) * 
+    # (1 - gamma) * exp(llHHH) *
     #   (- exp(-2 * llZi + llHHH) * (1 - gamma) * score_j * score_i +
     #      exp(-llZi) * (score_j * score_i + deriv2_ij))
     (1 - gamma) * exp(llHHH -llZi) *
       (- exp(- llZi + llHHH) * (1 - gamma) * score_j * score_i +
          (score_j * score_i + deriv2_ij))
   }
-  
+
   dThetadGamma <- function(score_Theta, dGamma){
     # exp(llHHH) * score_Theta *
     #   (- exp(-2 * llZi) * ((Y == 0) - exp(llHHH)) * dGamma * (1 - gamma)
     #    - exp(-llZi) * dGamma
     #    )
-    
+
     exp(llHHH) * score_Theta *
       (exp(-llZi) *( -exp(-llZi) *((Y == 0) - exp(llHHH)) *
                        dGamma * (1 - gamma) - dGamma)
       )
   }
-  
+
   d2Gamma <- function(dGamma1, dGamma2, dGamma_2){
-    # ((Y == 0) - exp(llHHH)) * 
+    # ((Y == 0) - exp(llHHH)) *
     #   ((- exp(-2 * llZi) * ((Y == 0) - exp(llHHH)) * dGamma2) * dGamma1 +
     #      exp(-llZi) * dGamma_2)
     ((Y == 0) - exp(llHHH)) *
@@ -998,15 +1016,15 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
     hessian.FE.FE <- matrix(0,dimFE,dimFE)
     hessian.FE.RE <- matrix(0,dimFE,dimRE)
     hessian.RE.RE <- matrix(0,dimRE,dimRE)
-    
+
     hessian.FE.Psi <- matrix(0,dimFE,dimPsi)
     hessian.Psi.RE <- matrix(0,dimPsi,dimPsi+dimRE) # CAVE: contains PsiPsi and PsiRE
-    
+
     hessian.FE.d <- matrix(0,dimFE,dimd)
     hessian.d.d <- matrix(0,dimd,dimd)
     hessian.d.Psi <- matrix(0,dimd,dimPsi)
     hessian.d.RE <- matrix(0,dimd,dimRE)
-    
+
     ## derivatives wrt neighbourhood weight parameters d
     if (dimd > 0L) {
       phi.doff <- function (dneoff) {
@@ -1026,21 +1044,21 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           ij <- ij + 1L  #= dimd*(i-1) + j - (i-1)*i/2  # for j >= i
           ## d2mudddd contains upper triangle by row (=lowertri by column)
           d2ij <- deriv2HHH(dmudd[[i]], dmudd[[j]], d2mudddd[[ij]])
-          
+
           score_di <- score_list$d[[i]]
           score_dj <- score_list$d[[j]]
           d2ij <- deriv2HHHZi(score_di, score_dj, d2ij)
-          
+
           hessian.d.d[i,j] <- sum(d2ij, na.rm=TRUE)
         }
       }
     }
-    
+
     if (dimPsi > 0L) {
       ## d l(theta,x) /dpsi dpsi
       score_Psi <- score_list$Psi
       dPsidPsi <- deriv2HHHZi(score_Psi, score_Psi, dPsidPsiMat)
-      
+
       dPsidPsi <- surveillance:::.colSumsGrouped(dPsidPsi, indexPsi)
       hessian.Psi.RE[,seq_len(dimPsi)] <- if (dimPsi == 1L) {
         dPsidPsi
@@ -1055,11 +1073,11 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
         score_di <- score_list$d[[i]]
         score_Psi <- score_list$Psi
         dddPsi <- deriv2HHHZi(score_di, score_Psi, dddPsi)
-        
+
         hessian.d.Psi[i,] <- surveillance:::.colSumsGrouped(dddPsi, indexPsi)
       }
     }
-    
+
     ##
     i.fixed <- function(){
       if(random.j){
@@ -1098,7 +1116,7 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
         hessian.FE.RE[idxFE==i,idxRE==j] <<- colSums(didj %mj% Z.j)
         if (j != i)  # otherwise redundant (duplicate)
           hessian.FE.RE[idxFE==j,idxRE==i] <<- colSums(didj %m% Z.i)
-        
+
         if(length(Z.j)==1 & length(Z.i)==1){ # both iid
           Z <- Z.i*Z.j
           hessian.RE.RE[which(idxRE==i),idxRE==j] <<- diag(colSums( didj %m% Z))
@@ -1132,10 +1150,10 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
       hessian.FE.FE[idxFE==i,idxFE==j] <<- dIJ
     }
     ##----------------------------------------------
-    
+
     for(i in seq_len(nGroups)){ #go through rows of hessian
       comp.i <- term["offsetComp",i][[1]]
-      
+
       if(comp.i != 4){
         # parameter group belongs to which components
         # get covariate value
@@ -1144,10 +1162,10 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           Xit <- Xit[subset,,drop=FALSE]
         }
         m.Xit <- mean.comp[[comp.i]] * Xit
-        
+
         random.i <- term["random",i][[1]]
         unitSpecific.i <- term["unitSpecific",i][[1]]
-        
+
         ## fill psi-related entries and select fillHess function
         if (random.i) {
           Z.i <- term["Z.intercept",i][[1]]   # Z.i and %m% (of i) determined here
@@ -1155,11 +1173,11 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           fillHess <- i.random
           if (dimPsi > 0L) {
             dThetadPsiMat <- dThetadPsi(m.Xit)
-            
+
             score_Thetai <- score_list$terms[[i]]
             score_Psi <- score_list$Psi
             dThetadPsi <- deriv2HHHZi(score_Thetai, score_Psi, dThetadPsiMat)
-            
+
             hessian.FE.Psi[idxFE==i,] <- surveillance:::.colSumsGrouped(dThetadPsi, indexPsi)
             dThetadPsi.i <- .colSums(dThetadPsi %m% Z.i, length(subset), term["dim.re",i][[1]], na.rm=TRUE)
             if (dimPsi==1L) {
@@ -1174,11 +1192,11 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           fillHess <- i.unit
           if (dimPsi > 0L) {
             dThetadPsiMat <- dThetadPsi(m.Xit)
-            
+
             score_Thetai <- score_list$terms[[i]]
             score_Psi <- score_list$Psi
             dThetadPsi <- deriv2HHHZi(score_Thetai, score_Psi, dThetadPsiMat)
-            
+
             dThetadPsi.i <- .colSums(dThetadPsi, length(subset), model$nUnits, na.rm=TRUE)
             if (dimPsi==1L) {
               hessian.FE.Psi[idxFE==i,] <- dThetadPsi.i[which.i]
@@ -1193,16 +1211,16 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             ## dPsi <- colSums(dThetadPsi(m.Xit),na.rm=TRUE)
             ## hessian.FE.Psi[idxFE==i,] <- if (dimPsi==1L) sum(dPsi) else dPsi[order(indexPsi)]
             dThetadPsiMat <- dThetadPsi(m.Xit)
-            
+
             score_Thetai <- score_list$terms[[i]]
             score_Psi <- score_list$Psi
             dThetadPsi <- deriv2HHHZi(score_Thetai, score_Psi, dThetadPsiMat)
-            
-            
+
+
             hessian.FE.Psi[idxFE==i,] <- surveillance:::.colSumsGrouped(dThetadPsi, indexPsi)
           }
         }
-        
+
         ## fill pars$d-related entries
         for (j in seq_len(dimd)) {      # will not be run if dimd==0
           didd <- deriv2HHH(dTheta_l = m.Xit, dTheta_k = dmudd[[j]],
@@ -1211,17 +1229,17 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           score_dj <- score_list$d[[j]]
           score_Thetai <- score_list$terms[[i]]
           didd <- deriv2HHHZi(score_Thetai, score_dj, didd)
-          
+
           hessian.FE.d[idxFE==i,j] <- if (unitSpecific.i) {
             colSums(didd,na.rm=TRUE)[which.i]
           } else sum(didd)
           if (random.i) hessian.d.RE[j,idxRE==i] <- colSums(didd %m% Z.i)
         }
-        
+
         ## fill other (non-psi, non-d) entries (only upper triangle, j >= i!)
         for(j in i:nGroups){
           comp.j <- term["offsetComp",j][[1]]
-          
+
           Xjt <- term["terms",j][[1]] # eiter 1 or a matrix with values
           if(is.matrix(Xjt)){
             Xjt <- Xjt[subset,,drop=FALSE]
@@ -1232,12 +1250,12 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             didj <- deriv2HHH(dTheta_l = m.Xit, dTheta_k = mean.comp[[comp.j]]*Xjt,
                               dTheta_lk = m.Xit.Xjt)
             didj[isNA]<-0
-            
+
             score_di <- score_list$terms[[i]]
             score_dj <- score_list$terms[[j]]
             didj <- deriv2HHHZi(score_di, score_dj, didj)
-            
-            
+
+
           }else{
             # didj <- deriv2HHH(dTheta_l = m.Xit, dTheta_k = mean.comp[[comp.j]]*Xjt,
             #                   dTheta_lk = m.Xit.Xjt)
@@ -1245,16 +1263,16 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             score_Theta <- score_list$terms[[i]]
             didj <- dThetadGamma(score_Theta, dGamma)
             didj[isNA]<-0
-            
+
           }
-          
+
           random.j <- term["random",j][[1]]
           unitSpecific.j <- term["unitSpecific",j][[1]]
           which.j <- term["which",j][[1]]
           #browser()
           fillHess()
         }
-        
+
       }else{
         # parameter group belongs to which components
         # get covariate value
@@ -1263,10 +1281,10 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
           Xit <- Xit[subset,,drop=FALSE]
         }
         #m.Xit <- mean.comp[[comp.i]] * Xit
-        
+
         random.i <- term["random",i][[1]]
         unitSpecific.i <- term["unitSpecific",i][[1]]
-        
+
         ## fill psi-related entries and select fillHess function
         if (random.i) {
           Z.i <- term["Z.intercept",i][[1]]   # Z.i and %m% (of i) determined here
@@ -1276,7 +1294,7 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             score_Psi <- score_list$Psi
             dGammai <- gamma1 * Xit
             dThetadPsi <-  dThetadGamma(score_Psi, dGammai)
-            
+
             hessian.FE.Psi[idxFE==i,] <- surveillance:::.colSumsGrouped(dThetadPsi, indexPsi)
             dThetadPsi.i <- .colSums(dThetadPsi %m% Z.i, length(subset), term["dim.re",i][[1]], na.rm=TRUE)
             if (dimPsi==1L) {
@@ -1293,8 +1311,8 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             score_Psi <- score_list$Psi
             dGammai <- gamma1 * Xit
             dThetadPsi <-  dThetadGamma(score_Psi, dGammai)
-            
-            
+
+
             dThetadPsi.i <- .colSums(dThetadPsi, length(subset), model$nUnits, na.rm=TRUE)
             if (dimPsi==1L) {
               hessian.FE.Psi[idxFE==i,] <- dThetadPsi.i[which.i]
@@ -1311,29 +1329,29 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             score_Psi <- score_list$Psi
             dGammai <- gamma1 * Xit
             dThetadPsi <-  dThetadGamma(score_Psi, dGammai)
-            
+
             hessian.FE.Psi[idxFE==i,] <- surveillance:::.colSumsGrouped(dThetadPsi, indexPsi)
           }
         }
-        
+
         ## fill pars$d-related entries
         for (j in seq_len(dimd)) {      # will not be run if dimd==0
-          
+
           dGammai <- gamma1 * Xit
           score_dj <- score_list$d[[j]]
           didd <- dThetadGamma(score_dj, dGammai)
           didd[isNA] <- 0
-          
+
           hessian.FE.d[idxFE==i,j] <- if (unitSpecific.i) {
             colSums(didd,na.rm=TRUE)[which.i]
           } else sum(didd)
           if (random.i) hessian.d.RE[j,idxRE==i] <- colSums(didd %m% Z.i)
         }
-        
+
         ## fill other (non-psi, non-d) entries (only upper triangle, j >= i!)
         for(j in i:nGroups){
           comp.j <- term["offsetComp",j][[1]]
-          
+
           Xjt <- term["terms",j][[1]] # eiter 1 or a matrix with values
           if(is.matrix(Xjt)){
             Xjt <- Xjt[subset,,drop=FALSE]
@@ -1345,7 +1363,7 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             score_dj <- score_list$terms[[j]]
             didd <- dThetadGamma(score_dj, dGammai)
             didd[isNA] <- 0
-            
+
           }else{
             # didj <- deriv2HHH(dTheta_l = m.Xit, dTheta_k = mean.comp[[comp.j]]*Xjt,
             #                   dTheta_lk = m.Xit.Xjt)
@@ -1354,18 +1372,18 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
             dGamma2 <- gamma2 * Xit * Xjt
             didj <- d2Gamma(dGammai, dGammaj, dGamma2)
             didj[isNA]<-0
-            
+
           }
-          
+
           random.j <- term["random",j][[1]]
           unitSpecific.j <- term["unitSpecific",j][[1]]
           which.j <- term["which",j][[1]]
-          
+
           fillHess()
         }
       }
     }
-    
+
     #########################################################
     ## fill lower triangle of hessians and combine them
     ########################################################
@@ -1373,15 +1391,15 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
                      cbind(matrix(0,dimd,dimFE),hessian.d.d,hessian.d.Psi,hessian.d.RE),
                      cbind(matrix(0,dimPsi,dimFE+dimd),hessian.Psi.RE),
                      cbind(matrix(0,dimRE,dimFE+dimd+dimPsi),hessian.RE.RE))
-    
+
     hessian[lower.tri(hessian)] <- 0  # CAR blocks in hessian.RE.RE were fully filled
     diagHessian <- diag(hessian)
     fisher <- -(hessian + t(hessian))
     diag(fisher) <- -diagHessian
-    
+
     return(fisher)
   }
-  
+
   fisher <- computeFisher(mu[c("epi.own","epi.neighbours","endemic")])
   #browser()
   ## add penalty for random effects
@@ -1409,7 +1427,7 @@ getSigmai <- function(sd,    # vector of length dim with log-stdev's
                       dim
 ){
   if(dim==0) return(NULL)
-  
+
   Sigma.i <- if (length(correlation) == 0L) diag(exp(2*sd), dim) else {
     D <- diag(exp(sd), dim)
     L <- diag(nrow=dim)
@@ -1434,9 +1452,9 @@ getSigmaiInv <- function(sd,    # vector of length dim with log-stdev's
                          # parameters, 0-length if uncorrelated
                          dim
 ){
-  
+
   if(dim==0) return(NULL)
-  
+
   Sigma.i.inv <- if (length(correlation) == 0L) diag(exp(-2*sd), dim) else {
     r <- correlation
     Dinv <- diag(exp(-sd), dim)
@@ -1449,7 +1467,7 @@ getSigmaiInv <- function(sd,    # vector of length dim with log-stdev's
     }
     if(dim == 4){
       L[4,1] <- -r[4]*surveillance:::sqrtOf1pr2(r[5])*
-        surveillance:::sqrtOf1pr2(r[6]) + 
+        surveillance:::sqrtOf1pr2(r[6]) +
         r[1]*r[5]*surveillance:::sqrtOf1pr2(r[6]) -
         r[6] * L[3,1]
       L[4,2] <- -r[5]*surveillance:::sqrtOf1pr2(r[1])*
@@ -1461,7 +1479,7 @@ getSigmaiInv <- function(sd,    # vector of length dim with log-stdev's
     }
     Dinv %*% crossprod(L) %*% Dinv  # ~75% quicker than Dinv %*% t(L) %*% L %*% Dinv
   }
-  
+
   return(Sigma.i.inv)
 }
 
@@ -1493,15 +1511,15 @@ getSigma <- function(sd, correlation, dimSigma, dimBlocks, Sigmai=NULL){
 ## Parameter and model unpacking at the beginning (up to the ###...-line) is
 ## identical in marScore() and marFisher()
 marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
-  
+
   dimVar <- model$nVar
   dimCorr <- model$nCorr
   dimSigma <- model$nSigma
-  
+
   if(dimSigma == 0){
     return(-Inf)
   }
-  
+
   if(any(is.na(sd.corr))){
     # in order to avoid nlminb from running into an infinite loop (cf. bug
     # report #15052), we have to emergency stop() in this case.
@@ -1509,29 +1527,29 @@ marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
     # any of the supplied functions.
     stop("NAs in variance parameters.", ADVICEONERROR)
   }
-  
+
   sd   <- head(sd.corr,dimVar)
   corr <- tail(sd.corr,dimCorr)
-  
+
   pars <- surveillance:::splitParams(theta,model)
   randomEffects <- pars$random
   dimRE <- model$nRE
-  
+
   dimBlocks <- model$rankRE[model$rankRE>0]
   Sigma.inv <- getSigmaInv(sd, corr, dimVar, dimBlocks)
-  
+
   # if not given, calculate unpenalized part of fisher info
   if(is.null(fisher.unpen)){
     fisher.unpen <- attr(penFisher(theta, sd.corr, model,attributes=TRUE), "fisher")
   }
-  
+
   # add penalty to fisher
   fisher <- fisher.unpen
   thetaIdxRE <- seq.int(to=length(theta), length.out=dimRE)
   fisher[thetaIdxRE,thetaIdxRE] <- fisher[thetaIdxRE,thetaIdxRE] + Sigma.inv
-  
+
   ############################################################
-  
+
   # penalized part of likelihood
   # compute -0.5*log(|Sigma|) - 0.5*RE' %*% Sigma.inv %*% RE
   # where -0.5*log(|Sigma|) = -dim(RE_i)*[Sum(sd_i) -0.5*log(1+corr_i^2)]
@@ -1542,11 +1560,11 @@ marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
   if(dimCorr >0){
     loglik.pen <- loglik.pen + 0.5*dimBlocks[1]*sum(log(1+corr^2))
   }
-  
+
   ## approximate marginal likelihood
   logdetfisher <- determinant(fisher,logarithm=TRUE)$modulus
   lmarg <- loglik.pen -0.5*c(logdetfisher)
-  
+
   return(lmarg)
 }
 updateParams_nlminb <- surveillance:::updateParams_nlminb
@@ -1575,7 +1593,7 @@ fitHHH4ZI <- function(theta, sd.corr, model,
 {
   dimFE.d.O <- model$nFE + model$nd + model$nOverdisp
   dimRE <- model$nRE
-  
+
   getUpdater <- function (cntrl, start, ...) {
     method <- cntrl$method; cntrl$method <- NULL
     if (length(start) == 1 && method == "Nelder-Mead") {
@@ -1588,11 +1606,11 @@ fitHHH4ZI <- function(theta, sd.corr, model,
                  method else "optim", sep="_"),
          control = surveillance:::setOptimControl(method, cntrl, ...))
   }
-  
+
   ## ## artificial lower bound on intercepts of epidemic components
   ## reg.lower <- rep.int(-Inf, length(theta))
   ## reg.lower[grep("^(ar|ne)\\.(1|ri)", model$namesFE)] <- -20
-  
+
   ## set optimizer for regression parameters
   updateRegressionControl <- getUpdater(cntrl.regression, theta,
                                         ## lower=reg.lower,
@@ -1603,9 +1621,9 @@ fitHHH4ZI <- function(theta, sd.corr, model,
             alist(theta, penLogLik, penScore, penFisher,
                   sd.corr=sd.corr, model=model,
                   control=updateRegressionControl[[2]]))
-  
+
   ## set optimizer for variance parameters
-  if(cntrl.variance$method != "cntrl.variance") 
+  if(cntrl.variance$method != "cntrl.variance")
     stop("only method Nelder-Mead is available for variance part")
   updateVarianceControl <- getUpdater(cntrl.variance, sd.corr,
                                       lower=-5, upper=5, verbose=verbose)
@@ -1615,14 +1633,14 @@ fitHHH4ZI <- function(theta, sd.corr, model,
                   theta=theta, model=model,
                   fisher.unpen=fisher.unpen, verbose=verbose>1,
                   control=updateVarianceControl[[2]]))
-  
+
   ## Let's go
   if (verbose>0) {
     cat(as.character(Sys.time()), ":",
         if (dimRE == 0) "Optimization of regression parameters" else
           "Iterative optimization of regression & variance parameters", "\n")
   }
-  
+
   if (dimRE == 0) { # optimization of regression coefficients only
     parReg <- updateRegression(theta, sd.corr)
     theta <- parReg$par
@@ -1634,17 +1652,17 @@ fitHHH4ZI <- function(theta, sd.corr, model,
     while(convergence != 0 && (i < cntrl.stop$niter)){
       i <- i+1
       if (verbose>0) cat("\n")
-      
+
       ## update regression coefficients
       parReg <- updateRegression(theta, sd.corr)
       theta <- parReg$par
       fisher.unpen <- attr(penFisher(theta, sd.corr, model, attributes=TRUE),
                            "fisher")
-      
+
       if(verbose>0)
         cat("Update of regression parameters: ",
             "max|x_0 - x_1| / max|x_0| =", parReg$rel.tol, "\n")
-      
+
       if(parReg$convergence != 0) {
         if (!is.null(parReg$message))
           cat("! Non-convergence message from optimizer:",
@@ -1652,26 +1670,26 @@ fitHHH4ZI <- function(theta, sd.corr, model,
         cat("Update of regression coefficients in iteration ",
             i, " unreliable\n")
       }
-      
+
       if(parReg$convergence > 20 && shrinkage){
         cat("\n\n***************************************\nshrinkage",
             0.1*theta[abs(theta)>10],"\n")
         theta[abs(theta)>10] <- 0.1*theta[abs(theta)>10]
         diag(fisher.unpen) <- diag(fisher.unpen)+1e-2
       }
-      
+
       ## update variance parameters
       parVar <- updateVariance(sd.corr, theta, fisher.unpen)
-      
+
       if(verbose>0)
         cat("Update of variance parameters:  max|x_0 - x_1| / max|x_0| =",
             parVar$rel.tol, "\n")
-      
+
       if(parVar$convergence!=0) {
         if (!is.null(parVar$message)) print(parVar$message)
         cat("Update of variance parameters in iteration ", i, " unreliable\n")
       }
-      
+
       ## NA values in sd.corr cause a stop() already in marLogLik()
       ## if(any(is.na(parVar$par))){
       ##     updateVarianceControl[[1]] <- "updateParams_optim"
@@ -1683,31 +1701,31 @@ fitHHH4ZI <- function(theta, sd.corr, model,
       ##         "for variance updates\n")
       ## } else
       sd.corr <- parVar$par
-      
+
       ## overall convergence ?
       if( (parReg$rel.tol < cntrl.stop$tol) && (parVar$rel.tol < cntrl.stop$tol)
           && (parReg$convergence==0) && (parVar$convergence==0) )
         convergence <- 0
-      
+
       ## exit loop if no more change in parameters (maybe false convergence)
       if (parReg$rel.tol == 0 && parVar$rel.tol == 0)
         break
     }
   }
-  
+
   if(verbose > 0) {
     cat("\n")
     cat(as.character(Sys.time()), ":", if (convergence==0)
       "Optimization converged" else "Optimization DID NOT CONVERGE", "\n\n")
   }
-  
+
   ll <- penLogLik(theta=theta,sd.corr=sd.corr,model=model)
   fisher <- penFisher(theta=theta,sd.corr=sd.corr,model=model)
   dimnames(fisher) <- list(names(theta), names(theta))
   margll <- marLogLik(sd.corr=sd.corr, theta=theta, model=model)
-  
+
   list(theta=theta, sd.corr=sd.corr,
        loglik=ll, margll=margll,fisher=fisher,
        convergence=convergence, dim=c(fixed=dimFE.d.O,random=dimRE))
-  
+
 }

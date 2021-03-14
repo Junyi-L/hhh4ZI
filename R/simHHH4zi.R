@@ -1,4 +1,30 @@
-simulate <- function (stsObj, control, ...) UseMethod("simulate")
+################################################################################
+### The following are modified versions of functions from the surveillance package
+### and wrappers around them.
+### See below the original copyright declaration.
+################################################################################
+
+
+################################################################################
+### Part of the surveillance package, http://surveillance.r-forge.r-project.org
+### Free software under the terms of the GNU General Public License, version 2,
+### a copy of which is available at http://www.r-project.org/Licenses/.
+###
+### Simulate from a HHH4 model
+###
+### Copyright (C) 2012 Michaela Paul, 2013-2016,2018 Sebastian Meyer
+### $Revision$
+### $Date$
+################################################################################
+
+#' Simulate "hhh4ZI" Count Time Series
+#'
+#' This function is the equivalent of \code{surveillance::simulate.hhh4} for model fits of class
+#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
+#' same as in \code{surveillance::simulate.hhh4}.
+#'
+#' @export
+
 simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
                            nsim=1, # number of replicates to simulate
                            seed=NULL,
@@ -8,7 +34,7 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
                            components=c("ar","ne","end"), # which comp to include
                            simplify=nsim>1, # counts array only (no full sts)
                            ...)
-{ 
+{
   ## Determine seed (this part is copied from stats:::simulate.lm with
   ## Copyright (C) 1995-2012 The R Core Team)
   if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE))
@@ -22,17 +48,17 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
     on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
   }
   ## END seed
-  
+
   cl <- match.call()
   theta <- if (missing(coefs)) coefs else surveillance:::checkCoefs(object, coefs)
   stopifnot(subset >= 1, subset <= nrow(object$stsObj))
-  
+
   ## lags
   lag.ar <- object$control$ar$lag
   lag.ne <- object$control$ne$lag
   lag.gamma <- object$control$zi$lag
   maxlag <- max(lag.ar, lag.ne, lag.gamma)
-  
+
   ## initial counts
   nUnits <- object$nUnit
   if (is.null(y.start)) { # set starting value to mean observed (in subset!)
@@ -45,26 +71,26 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
     if (nrow(y.start) < maxlag)
       stop("need 'y.start' values for lag=", maxlag, " initial time points")
   }
-  
+
   ## store model terms in the hhh4 object because we request them repeatedly
   ## (within get_exppreds_with_offsets() and directly afterwards)
   ## CAVE: for an ri()-model, building the terms affects the .Random.seed,
   ## so doing that twice would yield different simulations than pre-1.16.2
   if (is.null(object$terms))
     object$terms <- terms.hhh4ZI(object)
-  
+
   ## get fitted exppreds nu_it, phi_it, lambda_it (incl. offsets, t in subset)
   exppreds <- surveillance:::get_exppreds_with_offsets(object, subset = subset, theta = theta)
-  
+
   ## extract overdispersion parameters (simHHH4 assumes psi->0 means Poisson)
   model <- terms.hhh4ZI(object)
   psi <- surveillance:::splitParams(theta,model)$overdisp
   if (length(psi) > 1) # "NegBinM" or shared overdispersion parameters
     psi <- psi[model$indexPsi]
-  
+
   ## weight matrix/array of the ne component
   neweights <- getNEweights(object, coefW(theta))
-  
+
   ## set predictor to zero if not included ('components' argument)
   stopifnot(length(components) > 0, components %in% c("ar", "ne", "end"))
   getComp <- function (comp) {
@@ -79,13 +105,13 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
   gamma_ar <- theta[grepl("zi.AR", names(theta))]
   gamma_ar <- if(! model$zi.lag.unitSpecific) matrix(rep(gamma_ar, nUnits), ncol = nUnits) else
     matrix(gamma_ar, ncol = nUnits, byrow = TRUE)
-  
+
   ## simulate
   simcall <- quote(
     simHHH4ZI(ar, ne, end, psi,gamma_end, gamma_ar,
               neweights, y.start, lag.ar, lag.ne, lag.gamma)
   )
-  
+
   if (!simplify) {
     ## result template
     res0 <- object$stsObj[subset,]
@@ -104,7 +130,7 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
     attr(res, "stsObserved") <- object$stsObj[subset,]
     class(res) <- c("hhh4ZIsims","hhh4sims")
   }
-  
+
   ## Done
   attr(res, "call") <- cl
   attr(res, "seed") <- RNGstate
@@ -130,11 +156,11 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
                       lag.ar = 1,
                       lag.ne = lag.ar,
                       lag.gamma = lag.ar){
-  
-  
+
+
   nTime <- nrow(end)
   nUnits <- ncol(end)
-  
+
   ## check and invert psi since rnbinom() uses different parametrization
   size <- if (length(psi) == 0 ||
               isTRUE(all.equal(psi, 0, check.attributes=FALSE))) {
@@ -146,21 +172,21 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
            " (number of units)")
     1/psi
   }
-  
+
   # simulate from NegBin model
   ## unit-specific 'mean's and variance = mean + psi*mean^2
   ## where 'size'=1/psi and length(psi) == 1 or length(mean)
   rdistr <- function(n, mean) rnbinom(n, mu = mean, size = size)
-  
+
   ## weighted sum of counts of other (neighbouring) regions
   ## params: y - vector with (lagged) counts of regions
   ##         W - nUnits x nUnits adjacency/weight matrix (0=no neighbour)
   wSumNE <- if (is.null(neW) || all(neW == 0)) { # includes the case nUnits==1
     function (y, W) numeric(nUnits)
   } else function (y, W) .colSums(W * y, nUnits, nUnits)
-  
+
   ## W * y = (W[1, ]* y[1]; W[2, ]* y[2]; ...)
-  
+
   ## initialize matrices for means mu_i,t and simulated data y_i,t
   mu <- y <- omega <- gamma <- matrix(0, nTime, nUnits)
   y <- rbind(start, y)
@@ -171,12 +197,12 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
     #browser()
     if (timeDependentWeights) neWt <- neW[,,t]
     gamma[t,] <- plogis(if(lag.gamma[1] > 0) {
-      gamma_end[t,] +  (if(length(lag.gamma) >1) 
-        colSums(y[nStart+t-lag.gamma,] * gamma_ar) else 
+      gamma_end[t,] +  (if(length(lag.gamma) >1)
+        colSums(y[nStart+t-lag.gamma,] * gamma_ar) else
           y[nStart+t-lag.gamma,] * gamma_ar)
       } else gamma_end[t,])
     omega[t,] <- ifelse(runif(nUnits) < gamma[t,], 1, 0)
-    
+
     #browser()
     ## mean mu_i,t = lambda*y_i,t-1 + phi*sum_j wji*y_j,t-1 + nu_i,t
     mu[t,] <-
@@ -187,9 +213,9 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
     y[nStart+t,] <-
       ifelse(omega[t,] == 1, rep(0, nUnits),
              rdistr(nUnits, mu[t,]))
-    
+
   }
-  
+
   ## return simulated data without initial counts
   # list(y = y[-seq_len(nStart),,drop=FALSE], mu = mu, omega = omega)
   y[-seq_len(nStart),,drop=FALSE]
