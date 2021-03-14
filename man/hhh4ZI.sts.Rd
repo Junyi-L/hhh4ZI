@@ -29,13 +29,13 @@ list with the following components:
 \itemize{
 \item{f = ~ -1}{
 a formula specifying
-\eqn{\log(\lambda_{it})}{log(\lambda_it)}}
+\eqn{\log(\lambda_{it})}{log(\lambda_it)}.}
 \item{offset = 1}{
 optional multiplicative offset, either 1 or
-a matrix of the same dimension as \code{observed(stsObj)}}
+a matrix of the same dimension as \code{observed(stsObj)}.}
 \item{lag = 1}{
 a positive integer meaning autoregression on
-\eqn{y_{i,t-lag}}}
+\eqn{y_{i,t-lag}}.}
 }
 }
 \item{\code{ne}}{
@@ -46,7 +46,7 @@ list with the following components:
   a formula specifying \eqn{\log(\phi_{it})}{log(\phi_it)}}.
   \item{offset = 1}{
   optional multiplicative offset, either 1 or
-     a matrix of the same dimension as \code{observed(stsObj)}}.
+     a matrix of the same dimension as \code{observed(stsObj)}.}
    \item{lag = 1}{
    a non-negative integer meaning dependency on
     \eqn{y_{j,t-lag}}.}
@@ -90,7 +90,7 @@ list with the following components:
 a formula specifying
 \eqn{\logit(\gamma_{it})}{logit(\gamma_it)}.}
 \item{lag = 1}{
-a positive integer meaning autoregression on
+a positive integer or vector meaning autoregression on
 \eqn{y_{i,t-lag}}}
 \item{lag.unitSpecific}{ logical indicating if the autoregressive parameter
 in the zero inflation part is unit specific. }
@@ -212,4 +212,36 @@ The characteristic feature of \code{hhh4} models is the additive
 decomposition of the conditional mean into \emph{epidemic} and
 \emph{endemic} components (Held et al, 2005).
 The inflated parameter is a logit-linear predictor and can have autoregressive terms.
+}
+\examples{
+data("measlesDE", package = "hhh4ZI")
+library(surveillance)
+measlesDE <- aggregate(measlesDE, by = "time", nfreq = 26)
+adjmat <- poly2adjmat(measlesDE@map)
+neW1 <- adjmat/colSums(adjmat)
+fit <- hhh4ZI(measlesDE,
+control = list(
+  ar = list(f = ~1,
+            offset = 1,
+            lag = 1),
+  ne = list(f = ~1,
+            offset = 1,
+            lag = 1,
+           weights = neW1,
+           scale = NULL,
+           normalize = TRUE),
+ end = list(f = ~1,
+             offset = 1),
+  zi = list(f = ~1,
+            lag = 1
+ ),
+  family = "NegBin1",
+  optimizer = list(stop = list(tol = 1e-5, niter = 100),
+                   regression = list(method = "nlminb")),
+  verbose = TRUE,
+  keep.terms = TRUE
+)
+)
+summary(fit)
+sim_data <- simulate(fit, simplify = FALSE)
 }

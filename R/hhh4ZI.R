@@ -214,6 +214,37 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #'   to fit the model, i.e., a named numeric vector of length 5 of class
 #'   \code{"proc_time"}}
 #' }
+#' @examples
+#' data("measlesDE", package = "hhh4ZI")
+#' library(surveillance)
+#' measlesDE <- aggregate(measlesDE, by = "time", nfreq = 26)
+#' adjmat <- poly2adjmat(measlesDE@map)
+#' neW1 <- adjmat/colSums(adjmat)
+#' fit <- hhh4ZI(measlesDE,
+#' control = list(
+#'   ar = list(f = ~1,
+#'             offset = 1,
+#'             lag = 1),
+#'   ne = list(f = ~1,
+#'             offset = 1,
+#'             lag = 1,
+#'            weights = neW1,
+#'            scale = NULL,
+#'            normalize = TRUE),
+#'  end = list(f = ~1,
+#'              offset = 1),
+#'   zi = list(f = ~1,
+#'             lag = 1
+#'  ),
+#'   family = "NegBin1",
+#'   optimizer = list(stop = list(tol = 1e-5, niter = 100),
+#'                    regression = list(method = "nlminb")),
+#'   verbose = TRUE,
+#'   keep.terms = TRUE
+#' )
+#' )
+#' summary(fit)
+#' sim_data <- simulate(fit, simplify = FALSE)
 #' @export
 
 hhh4ZI.sts <- function(stsObj,
