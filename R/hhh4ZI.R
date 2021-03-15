@@ -223,9 +223,9 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #'   \code{"proc_time"}}
 #' }
 #' @examples
-#' data("measlesDE", package = "hhh4ZI")
+#' data("measles", package = "hhh4ZI")
 #' library(surveillance)
-#' measlesDE <- aggregate(measlesDE, by = "time", nfreq = 26)
+#' measlesDE <- aggregate(measles, by = "time", nfreq = 26)
 #' adjmat <- poly2adjmat(measlesDE@map)
 #' neW1 <- adjmat/colSums(adjmat)
 #' fit <- hhh4ZI(measlesDE,
