@@ -2,3 +2,4 @@
 
 S3method(hhh4ZI,sts)
 S3method(simulate,hhh4ZI)
+export(hhh4ZI)

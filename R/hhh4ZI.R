@@ -18,7 +18,6 @@
 ### $Date$
 ################################################################################
 ADVICEONERROR <- "\n  Try different starting values, more iterations, or another optimizer.\n"
-hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 
 #' @title Fitting zero-inflated HHH Models with Random Effects
 #' and Neighbourhood Structure
@@ -32,7 +31,8 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #'
 #' @param stsObj object of class \code{"\linkS4class{sts}"} containing the (multivariate)
 #' count data time series.
-#' @param control a list containing the model specification and control arguments:
+#' @param control a list containing the model specification and control arguments,
+#'  the parts relating to \code{hhh4} model is the same as in \code{surveillance::hhh4}:
 #' \itemize{
 #' \item{\code{ar}}{
 #' Model for the autoregressive component given as
@@ -187,7 +187,8 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #' This is mainly intended for internal use by the package developers.}
 #'
 #' @return \code{hhh4ZI} returns an object of class \code{"hhh4ZI"},
-#' which is a list containing the following components:
+#' which inherits from class \code{"hhh4"}, and
+#' is a list containing the following components:
 #' \itemize{
 #' \item{coefficients}{
 #' named vector with estimated (regression) parameters of the model}
@@ -253,6 +254,10 @@ hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
 #' )
 #' summary(fit)
 #' sim_data <- simulate(fit, simplify = FALSE)
+#' @export
+hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
+
+#' @rdname hhh4ZI
 #' @export
 hhh4ZI.sts <- function(stsObj,
                        control = list(
@@ -819,157 +824,9 @@ interpretControl <- function (control, stsObj)
 }
 
 # used to incorporate covariates and unit-specific effects
-fe <- function(x,          # covariate
-               unitSpecific = FALSE, # TRUE means which = rep.int(TRUE, nUnits)
-               which=NULL, # NULL = overall, vector with booleans = unit-specific
-               initial=NULL) # vector of inital values for parameters
-{
-  stsObj <- get("stsObj", envir=parent.frame(1), inherits=TRUE) #checkFormula()
-  nTime <- nrow(stsObj)
-  nUnits <- ncol(stsObj)
-
-  if(!is.numeric(x)){
-    stop("Covariate \'",deparse(substitute(x)),"\' is not numeric\n")
-  }
-  lengthX <- length(x)
-  if(lengthX == 1){
-    terms <- matrix(x, nTime, nUnits, byrow=FALSE)
-    mult <- "*"
-  } else if(lengthX == nTime){
-    terms <- matrix(x, nTime, nUnits, byrow=FALSE)
-    mult <- "*"
-  } else if(lengthX == nTime*nUnits){
-    if(!is.matrix(x)){
-      stop("Covariate \'",deparse(substitute(x)),"\' is not a matrix\n")
-    }
-    # check dimensions of covariate
-    if((ncol(x) != nUnits) | (nrow(x) != nTime)){
-      stop("Dimension of covariate \'",deparse(substitute(x)),"\' is not suitably specified\n")
-    }
-    terms <- x
-    mult <- "*"
-  } else {
-    stop("Covariate \'",deparse(substitute(x)),"\' is not suitably specified\n")
-  }
-
-  intercept <- all(terms==1)
-
-  # overall or unit-specific effect?
-  unitSpecific <- unitSpecific || !is.null(which)
-  if (unitSpecific) {
-    if (is.null(which)) {
-      which <- rep.int(TRUE, nUnits)
-    } else {
-      stopifnot(is.vector(which, mode="logical"), length(which) == nUnits)
-    }
-
-    terms[,!which] <- 0
-  }
-
-  # get dimension of parameter
-  dim.fe <- if (unitSpecific) sum(which) else 1
-
-  # check length of initial values + set default values
-  if (is.null(initial)) {
-    initial <- rep.int(0,dim.fe)
-  } else if (length(initial) != dim.fe) {
-    stop("initial values for '",deparse(substitute(x)),"' must be of length ",dim.fe)
-  }
-
-  name <- deparse(substitute(x))
-  if (unitSpecific)
-    name <- paste(name, colnames(stsObj)[which], sep=".")
-
-  result <- list(terms=terms,
-                 name=name,
-                 Z.intercept=NULL,
-                 which=which,
-                 dim.fe=dim.fe,
-                 initial.fe=initial,
-                 dim.re=0,
-                 dim.var=0,
-                 initial.var=NULL,
-                 initial.re=NULL,
-                 intercept=intercept,
-                 unitSpecific=unitSpecific,
-                 random=FALSE,
-                 corr=FALSE,
-                 mult=mult
-  )
-  return(result)
-}
-
+fe <- surveillance:::fe
 # random intercepts
-ri <- function(type=c("iid","car"),
-               corr=c("none","all"),
-               initial.fe=0,
-               initial.var=-.5,
-               initial.re=NULL)
-{
-  stsObj <- get("stsObj", envir=parent.frame(1), inherits=TRUE) #checkFormula()
-  if (ncol(stsObj) == 1)
-    stop("random intercepts require a multivariate 'stsObj'")
-  type <- match.arg(type)
-  corr <- match.arg(corr)
-  corr <- switch(corr,
-                 "none"=FALSE,
-                 "all"=TRUE)
-
-  if(type=="iid"){
-    Z <- 1
-    dim.re <- ncol(stsObj)
-    mult <- "*"
-  } else if(type=="car"){ # construct penalty matrix K
-    K <- neighbourhood(stsObj)
-    checkNeighbourhood(K)
-    K <- K == 1                         # indicate first-order neighbours
-    ne <- colSums(K)                    # number of first-order neighbours
-    K <- -1*K
-    diag(K) <- ne
-
-    dimK <- nrow(K)
-
-    # check rank of the nhood, only connected neighbourhoods are allowed
-    if(qr(K)$rank != dimK-1) stop("neighbourhood matrix contains islands")
-    # singular-value decomposition of K
-    svdK <- svd(K)
-    # just use the positive eigenvalues  of K in descending order
-    # for a the factorisation of the penalty matrix K = LL'
-    L <- svdK$u[,-dimK] %*% diag(sqrt(svdK$d[-dimK]))            #* only use non-zero eigenvalues
-
-    # Z = L(L'L)^-1, which can't be simplified to Z=(L')^-1 as L is not square
-    Z <- L %*% solve(t(L)%*%L)
-
-    dim.re <- dimK - 1L
-    mult <- "%*%"
-  }
-
-  # check length of initial values + set default values
-  stopifnot(length(initial.fe) == 1, length(initial.var) == 1)
-  if (is.null(initial.re)) {
-    initial.re <- rnorm(dim.re,0,sd=sqrt(0.001))
-  } else if (length(initial.re) != dim.re) {
-    stop("'initial.re' must be of length ", dim.re)
-  }
-
-  result <- list(terms=1,
-                 name=paste("ri(",type,")",sep=""),
-                 Z.intercept=Z,
-                 which=NULL,
-                 dim.fe=1,
-                 initial.fe=initial.fe,
-                 dim.re=dim.re,
-                 dim.var=1,
-                 initial.var=initial.var,
-                 initial.re=initial.re,
-                 intercept=TRUE,
-                 unitSpecific=FALSE,
-                 random=TRUE,
-                 corr=corr,
-                 mult=mult
-  )
-  return(result)
-}
+ri <- surveillance:::ri
 
 gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
 {
