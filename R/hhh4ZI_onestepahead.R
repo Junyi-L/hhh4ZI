@@ -21,6 +21,8 @@
 #' for model fits of class
 #' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 #' same as in \code{surveillance::oneStepAhead}.
+#' Predictions can be inspected using the \code{quantile},
+#' \code{confint} or \code{plot} methods.
 #' @export
 oneStepAhead <- function (result, tp, ...) UseMethod("oneStepAhead")
 
@@ -248,7 +250,9 @@ psi2size.oneStepAhead <- function (object)
   size
 }
 
-## quantiles of the one-step-ahead forecasts
+# Quantiles of the one-step-ahead forecasts
+#' @rdname oneStepAhead
+#' @export
 quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
 {
   stopifnot(is.vector(probs, mode = "numeric"), probs >= 0, probs <= 1,
@@ -275,13 +279,17 @@ quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/10
   } else qs
 }
 
-## confidence intervals for one-step-ahead predictions
+# Confidence intervals for one-step-ahead predictions
+#' @rdname oneStepAhead
+#' @export
 confint.oneStepAhead_hhh4ZI <- function (object, parm, level = 0.95, ...)
 {
   quantile.oneStepAhead_hhh4ZI(object, (1+c(-1,1)*level)/2, ...)
 }
 
-## simple plot of one-step-ahead forecasts
+#  plot of one-step-ahead forecasts
+#' @rdname oneStepAhead
+#' @export
 plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
                                start = NULL, ...)
 {

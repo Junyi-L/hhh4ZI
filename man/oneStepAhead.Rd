@@ -3,6 +3,9 @@
 \name{oneStepAhead}
 \alias{oneStepAhead}
 \alias{oneStepAhead.hhh4ZI}
+\alias{quantile.oneStepAhead_hhh4ZI}
+\alias{confint.oneStepAhead_hhh4ZI}
+\alias{plot.oneStepAhead_hhh4ZI}
 \title{Predictive Model Assessment for hhh4ZI Models}
 \usage{
 oneStepAhead(result, tp, ...)
@@ -16,6 +19,12 @@ oneStepAhead(result, tp, ...)
   verbose = TRUE,
   cores = 1
 )
+
+\method{quantile}{oneStepAhead_hhh4ZI}(x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
+
+\method{confint}{oneStepAhead_hhh4ZI}(object, parm, level = 0.95, ...)
+
+plot.oneStepAhead_hhh4ZI(x, unit = 1, probs = 1:99/100, start = NULL, ...)
 }
 \description{
 The function oneStepAhead computes successive one-step-ahead
