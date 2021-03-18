@@ -265,7 +265,7 @@ quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/10
            lambda = x$pred)
   } else {
     vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
-           mu = x$pred, size = size, pstr0 = x$gamma)
+           munb = x$pred, size = size, pstr0 = x$gamma)
   }
   ## one tp, one unit -> qs is a vector of length np
   ## otherwise, 'qs' has dimensions ntps x nUnit x np
