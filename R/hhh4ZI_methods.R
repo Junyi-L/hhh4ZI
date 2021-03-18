@@ -22,12 +22,14 @@
 ## S: a named list to adjust the number of harmonics of the three components
 ## subset.upper: refit on a subset of the data up to that time point
 ## use.estimates: use fitted parameters as new start values
-#'  @title update a fitted "hhh4ZI" model
-#'  @description Re-fit a \code{hhh4ZI} model with a modified control list.
-#'  This function is the equivalent of \code{surveillance::update.hhh4}
-#'  for model fits of class
+
+#' @title update a fitted "hhh4ZI" model
+#' @description Re-fit a \code{hhh4ZI} model with a modified control list.
+#' This function is the equivalent of \code{surveillance::update.hhh4}
+#' for model fits of class
 #' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 #' same as in \code{surveillance::update.hhh4}.
+#' @export
 
 update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,
                            use.estimates = object$convergence, evaluate = TRUE)
@@ -86,7 +88,7 @@ update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,
 
   ## use a different time range of the data (only changing the end)
   ## Note: surveillance < 1.15.0 disallowed subset.upper > max(control$subset)
-  if (isScalar(subset.upper)) {
+  if (surveillance:::isScalar(subset.upper)) {
     if (subset.upper < control$subset[1L])
       stop("'subset.upper' is smaller than the lower bound of 'subset'")
     control$subset <- control$subset[1L]:subset.upper

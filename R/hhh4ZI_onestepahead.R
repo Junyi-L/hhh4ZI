@@ -14,8 +14,19 @@
 ### a copy of which is available at http://www.r-project.org/Licenses/.
 ################################################################################
 
+#' @title Predictive Model Assessment for hhh4ZI Models
+#' @description  The function oneStepAhead computes successive one-step-ahead
+#'  predictions for a (random effects) HHH4ZI model fitted by \code{hhh4ZI.}
+#' This function is the equivalent of \code{surveillance::oneStepAhead}
+#' for model fits of class
+#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
+#' same as in \code{surveillance::oneStepAhead}.
+#' @export
+oneStepAhead <- function (result, tp, ...) UseMethod("oneStepAhead")
 
-oneStepAhead <- function(result, # hhh4-object (i.e. a hhh4 model fit)
+#' @rdname oneStepAhead
+#' @export
+oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit)
                          tp,     # scalar: one-step-ahead predictions for time
                          # points (tp+1):nrow(stsObj), or tp=c(from, to)
                          type = c("rolling", "first", "final"),
@@ -82,6 +93,11 @@ oneStepAhead <- function(result, # hhh4-object (i.e. a hhh4 model fit)
   ## result templates (named and filled with NA's)
   pred <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
                  dimnames=list(tps+1, colnames(observed)))
+  gamma <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
+                 dimnames=list(tps+1, colnames(observed)))
+  mu <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
+                 dimnames=list(tps+1, colnames(observed)))
+
   if (withPsi)
     psi <- matrix(NA_real_, nrow=ntps, ncol=dimPsi,
                   dimnames=list(tps, names(model$initialTheta)[psiIdx]))
@@ -102,7 +118,9 @@ oneStepAhead <- function(result, # hhh4-object (i.e. a hhh4 model fit)
     gamma <- gammaZero(coefs, fit$terms, subset=tp+1L, d = 0)
     mean <- (1 - gamma) * mu
 
-    c(list(pred = as.vector(mean)),
+    c(list(pred = as.vector(mean),
+           gamma = as.vector(gamma),
+           mu = as.vector(mu)),
       if (withPsi) list(psi = coefs[psiIdx]),
       if (keep.estimates) list(
         coefficients=coefs,
@@ -178,6 +196,8 @@ oneStepAhead <- function(result, # hhh4-object (i.e. a hhh4 model fit)
 
       ## gather results
       pred[i,] <- res$pred
+      gamma[i,] <- res$gamma
+      mu[i,] <- res$mu
       if (withPsi)
         psi[i,] <- res$psi
       if (keep.estimates) {
@@ -196,14 +216,15 @@ oneStepAhead <- function(result, # hhh4-object (i.e. a hhh4 model fit)
   }
 
   ## done
-  res <- c(list(pred = pred, observed = observed,
+  res <- c(list(pred = pred, mu = mu, gamma = gamma,
+                observed = observed,
                 psi = if (withPsi) psi else NULL,
                 allConverged = all(!is.na(pred))),
            if (keep.estimates) list(coefficients = coefficients,
                                     Sigma.orig = Sigma.orig,
                                     logliks = logliks)
   )
-  class(res) <- "oneStepAhead"
+  class(res) <- c("oneStepAhead_hhh4ZI","oneStepAhead")
   res
 }
 
@@ -228,7 +249,7 @@ psi2size.oneStepAhead <- function (object)
 }
 
 ## quantiles of the one-step-ahead forecasts
-quantile.oneStepAhead <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
+quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
 {
   stopifnot(is.vector(probs, mode = "numeric"), probs >= 0, probs <= 1,
             (np <- length(probs)) > 0)
@@ -239,8 +260,8 @@ quantile.oneStepAhead <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
     vapply(X = probs, FUN = qpois, FUN.VALUE = x$pred,
            lambda = x$pred)
   } else {
-    vapply(X = probs, FUN = qnbinom, FUN.VALUE = x$pred,
-           mu = x$pred, size = size)
+    vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
+           mu = x$pred, size = size, pstr0 = x$gamma)
   }
   ## one tp, one unit -> qs is a vector of length np
   ## otherwise, 'qs' has dimensions ntps x nUnit x np
@@ -252,4 +273,31 @@ quantile.oneStepAhead <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
   } else if (dim(qs)[2L] == 1L) {
     matrix(qs, dim(qs)[1L], dim(qs)[3L], dimnames = dimnames(qs)[c(1L,3L)])
   } else qs
+}
+
+## confidence intervals for one-step-ahead predictions
+confint.oneStepAhead_hhh4ZI <- function (object, parm, level = 0.95, ...)
+{
+  quantile.oneStepAhead_hhh4ZI(object, (1+c(-1,1)*level)/2, ...)
+}
+
+## simple plot of one-step-ahead forecasts
+plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
+                               start = NULL, ...)
+{
+  stopifnot(length(unit) == 1, length(probs) > 1)
+
+  ## select unit
+  obs <- x$observed[,unit]
+  ms <- x$pred[,unit]
+  qs <- quantile.oneStepAhead_hhh4ZI(x, probs = probs)
+  if (!is.matrix(qs))  # multi-unit predictions
+    qs <- matrix(qs[,unit,], dim(qs)[1L], dim(qs)[3L],
+                 dimnames = dimnames(qs)[c(1L,3L)])
+
+  ## produce fanplot
+  if (is.null(start))
+    start <- as.integer(rownames(qs)[1L])
+  fanplot(quantiles = qs, probs = probs, means = ms,
+          observed = obs, start = start, ...)
 }
