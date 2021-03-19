@@ -33,4 +33,6 @@ This function is the equivalent of \code{surveillance::oneStepAhead}
 for model fits of class
 \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 same as in \code{surveillance::oneStepAhead}.
+Predictions can be inspected using the \code{quantile},
+\code{confint} or \code{plot} methods.
 }
