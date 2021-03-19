@@ -11,7 +11,7 @@ hhh4ZI.hhh4 <- function(object, # a HHH4 object
   control$zi <- zi
   # use fitted coefficients in hhh4 object as start value
   control$start <- surveillance:::hhh4coef2start(object)
+  control$start$sd.corr <- NULL
   ## call main function
   hhh4ZI.sts(object$stsObj, control)
-
 }

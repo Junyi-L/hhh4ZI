@@ -79,6 +79,6 @@ fitH <- hhh4(stsObj,
              ), check.analyticals = FALSE
 )
 summary(fitH)
-fitH_ZI <- hhh4ZI.hhh4(fitH, zi = list(f =  ~-1 + ri(type = "iid", corr = "all"),
+fitH_ZI <- hhh4ZI(fitH, zi = list(f =  ~-1 + ri(type = "iid", corr = "all"),
                        lag = 1        # can be a scalar or vector
 ))
