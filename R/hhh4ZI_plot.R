@@ -16,8 +16,14 @@
 ### $Revision$
 ### $Date$
 ################################################################################
-
-
+#' @title lots for Fitted hhh4ZI-models
+#'
+#' @description This function is the equivalent of \code{surveillance::plot.hhh4} for model fits of class
+#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
+#' same as in \code{surveillance::plot.hhh4}, with one more component option for zero inflation part..
+#'
+#' @export
+# no maxEV
 plot.hhh4ZI <- function (x,
                        type = c("fitted", "season", "maxEV", "maps", "ri", "neweights"),
                        ...)
@@ -38,7 +44,8 @@ plot.hhh4ZI <- function (x,
 ###
 ### Time series of fitted component means and observed counts for selected units
 ###
-
+#' @rdname plot.hhh4ZI
+#' @export
 plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
                              col = c("grey85", "blue", "orange"),
                              pch = 19, pt.cex = 0.6, pt.col = 1,
@@ -100,7 +107,7 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
     legendidx <- 1L + c(
       if (legend.observed && !is.na(pch)) 0L,
       if (is.null(decompose)) {
-        which(c("ne","ar","end") %in% componentsHHH4(x))
+        which(c("ne","ar","end") %in% componentsHHH4ZI(x))
       } else seq_along(col))
     default.args <- list(
       x="topright", col=c(pt.col,rev(col))[legendidx], lwd=6,
@@ -126,26 +133,10 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
   invisible(meanHHHunits)
 }
 
-plotHHH4_fitted_check_col_decompose <- function (col, decompose)
-{
-  if (is.null(decompose)) {
-    stopifnot(length(col) == 3L)
-  } else {
-    nUnit <- length(decompose)
-    if (length(col) == nUnit) {
-      col <- c("grey85", col)  # first color is for "endemic"
-    } else if (length(col) != 1L + nUnit) {
-      warning("'col' should be of length ", 1L + nUnit)
-      col <- c(col[1L], rep_len(col[-1L], nUnit))
-    }
-  }
-  col
-}
-
-
 ### plot estimated component means for a single region
-
-plotHHH4_fitted1 <- function(x, unit=1, main=NULL,
+#' @rdname plot.hhh4ZI
+#' @export
+plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
                              col=c("grey85", "blue", "orange"),
                              pch=19, pt.cex=0.6, pt.col=1, border=col,
                              start=x$stsObj@start, end=NULL, xaxis=NULL,
@@ -238,7 +229,7 @@ plotHHH4_fitted1 <- function(x, unit=1, main=NULL,
 
   ## draw polygons
   if (is.null(decompose)) {
-    non0 <- which(c("end", "ar", "ne") %in% surveillance:::componentsHHH4(x))
+    non0 <- which(c("end", "ar", "ne") %in% componentsHHH4ZI(x))
     surveillance:::plotComponentPolygons(
       x = tp[tpInSubset],
       y = meanHHHunit[,c("endemic", "epi.own", "epi.neighbours")[non0],drop=FALSE],
@@ -257,41 +248,12 @@ plotHHH4_fitted1 <- function(x, unit=1, main=NULL,
   invisible(meanHHHunit)
 }
 
-
-### function which does the actual plotting of the polygons
-
-plotComponentPolygons <- function (x, y, col = 1:6, border = col, add = FALSE)
-{
-  if (!is.vector(x, mode = "numeric") || is.unsorted(x, strictly = TRUE))
-    stop("'x' must be a strictly increasing sequence of time points")
-  stopifnot(nrow(y <- as.matrix(y)) == (nTime <- length(x)))  # y >= 0
-  yc <- if ((nPoly <- ncol(y)) > 1L) {
-    apply(X = y, MARGIN = 1L, FUN = cumsum) # nPoly x nTime
-  } else t(y)
-
-  if (!add) {
-    ## establish basic plot window
-    plot(range(x), range(yc[nPoly,]), type = "n")
-  }
-
-  ## recycle graphical parameters
-  col <- rep_len(col, nPoly)
-  border <- rep_len(border, nPoly)
-
-  ## draw polygons
-  xpoly <- c(x[1L], x, x[length(x)])
-  for (poly in nPoly:1) {
-    polygon(x = xpoly, y = c(0, yc[poly, ], 0),
-            col = col[poly], border = border[poly])
-  }
-}
-
-
 ###
 ### Maps of the fitted mean components averaged over time
 ###
-
-plotHHH4Zi_maps <- function (x,
+#' @rdname plot.hhh4ZI
+#' @export
+plotHHH4ZI_maps <- function (x,
                            which = c("mean", "endemic", "epi.own", "epi.neighbours", "gamma"),
                            prop = FALSE, main = which, zmax = NULL, col.regions = NULL,
                            labels = FALSE, sp.layout = NULL, ...,
@@ -378,62 +340,16 @@ plotHHH4Zi_maps <- function (x,
 ###
 ### Map of estimated random intercepts of a specific component
 ###
+#' @rdname plot.hhh4ZI
+#' @export
 plotHHH4ZI_ri <- surveillance:::plotHHH4_ri
-plotHHH4_ri <- function (x, component, exp = FALSE,
-                         at = list(n = 10), col.regions = cm.colors(100),
-                         colorkey = TRUE, labels = FALSE, sp.layout = NULL,
-                         gpar.missing = list(col="darkgrey", lty=2, lwd=2),
-                         ...)
-{
-  ranefmatrix <- surveillance:::ranef.hhh4(x, tomatrix=TRUE)
-  if (is.null(ranefmatrix)) stop("model has no random effects")
-  stopifnot(length(component) == 1L)
-  if (is.na(comp <- pmatch(component, colnames(ranefmatrix))))
-    stop("'component' must (partially) match one of ",
-         paste(dQuote(colnames(ranefmatrix)), collapse=", "))
-
-  map <- as(x$stsObj@map, "SpatialPolygonsDataFrame")
-  if (length(map) == 0L) stop("'x$stsObj' has no map")
-  map$ranef <- ranefmatrix[,comp][row.names(map)]
-  .range <- c(-1, 1) * max(abs(map$ranef), na.rm = TRUE)  # 0-centered
-  if (exp) {
-    map$ranef <- exp(map$ranef)
-    .range <- exp(.range)
-  }
-
-  if (is.list(at)) {
-    at <- modifyList(list(n = 10, range = .range), at)
-    at <- if (exp) {
-      stopifnot(at$range[1] > 0)
-      scales::log_breaks(n = at$n)(at$range)
-    } else {
-      seq(at$range[1L], at$range[2L], length.out = at$n)
-    }
-    if (exp && isTRUE(colorkey))
-      colorkey <- list(at = log(at),
-                       labels = list(at = log(at), labels = at))
-  }
-
-  if (is.list(gpar.missing) && any(is.na(map$ranef))) {
-    sp.layout <- c(sp.layout,
-                   c(list("sp.polygons", map[is.na(map$ranef),]),
-                     gpar.missing))
-  }
-  if (!is.null(layout.labels <- layout.labels(map, labels))) {
-    sp.layout <- c(sp.layout, list(layout.labels))
-  }
-
-  spplot(map[!is.na(map$ranef),], zcol = "ranef",
-         sp.layout = sp.layout, col.regions = col.regions,
-         at = at, colorkey = colorkey, ...)
-}
-
 
 ###
 ### Plot the course of the dominant eigenvalue of one or several hhh4-fits
 ###
-
-plotHHH4_maxEV <- function (...,
+#' @rdname plot.hhh4ZI
+#' @export
+plotHHH4ZI_maxEV <- function (...,
                             matplot.args = list(), refline.args = list(),
                             legend.args = list())
 {
@@ -499,7 +415,7 @@ createLambda <- function (object)
 {
   nTime <- nrow(object$stsObj)
   nUnit <- object$nUnit
-  if (identical(componentsHHH4(object), "end")) { # no epidemic components
+  if (identical(componentsHHH4ZI(object), "end")) { # no epidemic components
     zeromat <- matrix(0, nUnit, nUnit)
     Lambda <- function (t) zeromat
     attr(Lambda, "type") <- "zero"
@@ -585,8 +501,9 @@ maxEV <- function (Lambda,
 ### or with intercept=TRUE, which only makes sense if there are no further
 ### non-centered covariates and offsets.
 ###
-
-plotHHH4_season <- function (...,
+#' @rdname plot.hhh4ZI
+#' @export
+plotHHH4ZI_season <- function (...,
                              components = NULL, intercept = FALSE,
                              xlim = NULL, ylim = NULL,
                              xlab = NULL, ylab = "", main = NULL,
@@ -595,13 +512,13 @@ plotHHH4_season <- function (...,
                              refline.args = list(), unit = 1)
 {
   objnams <- unlist(lapply(match.call(expand.dots=FALSE)$..., deparse))
-  objects <- getHHH4list(..., .names = objnams)
+  objects <- surveillance:::getHHH4list(..., .names = objnams)
   freq <- attr(objects, "freq")
   components <- if (is.null(components)) {
-    intersect(c("end", "ar", "ne"), unique(unlist(
-      lapply(objects, componentsHHH4), use.names = FALSE)))
+    intersect(c("end", "ar", "ne", "zi"), unique(unlist(
+      lapply(objects, componentsHHH4ZI), use.names = FALSE)))
   } else {
-    match.arg(components, choices = c("ar", "ne", "end", "maxEV"),
+    match.arg(components, choices = c("ar", "ne", "end", "zi","maxEV"),
               several.ok = TRUE)
   }
 
@@ -626,16 +543,18 @@ plotHHH4_season <- function (...,
 
   ## component-specific arguments
   ylim <- withDefaults(ylim,
-                       list(ar=NULL, ne=NULL, end=NULL, maxEV=NULL))
+                       list(ar=NULL, ne=NULL, end=NULL, zi = NULL, maxEV=NULL))
   ylab <- withDefaults(ylab,
                        list(ar=expression(hat(lambda)),
                             ne=expression(hat(phi)),
                             end=expression(hat(nu)),
+                            zi = expression(hat(gamma)),
                             maxEV="dominant eigenvalue"))
   main <- withDefaults(main,
                        list(ar="autoregressive component",
                             ne="spatiotemporal component",
                             end="endemic component",
+                            zi = "zero-inflation component",
                             maxEV="dominant eigenvalue"))
   anyMain <- any(unlist(lapply(main, nchar),
                         recursive=FALSE, use.names=FALSE) > 0)
@@ -717,20 +636,20 @@ plotHHH4_season <- function (...,
 # get estimated intercept and seasonal pattern in the different components
 # CAVE: other covariates and offsets are ignored
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-getSeason <- function(x, component = c("end", "ar", "ne"), unit = 1)
+getSeason <- function(x, component = c("end", "ar", "ne", "zi"), unit = 1)
 {
-  stopifnot(inherits(x, "hhh4"))
+  stopifnot(inherits(x, "hhh4ZI"))
   component <- match.arg(component)
-  startseason <- getSeasonStart(x)
+  startseason <- surveillance:::getSeasonStart(x)
   freq <- x$stsObj@freq
   if (is.character(unit)) unit <- match(unit, colnames(x$stsObj))
 
   ## return -Inf is component is not in the model (-> exp(-Inf) = 0)
-  if (!component %in% componentsHHH4(x))
+  if (!component %in% componentsHHH4ZI(x))
     return(list(intercept=-Inf, season=rep.int(-Inf, freq)))
 
   ## get the intercept
-  est <- fixef.hhh4(x, reparamPsi=FALSE)
+  est <- surveillance:::fixef.hhh4(x, reparamPsi=FALSE)
   intercept <- unname(est[grep(paste0("^", component, "\\.(1|ri)"), names(est))])
   if (length(intercept) == 0) {
     intercept <- 0 # no intercept (not standard)
@@ -773,7 +692,7 @@ getMaxEV_season <- function (x)
   stopifnot(inherits(x, "hhh4"))
   nUnits <- x$nUnit
   freq <- x$stsObj@freq
-  components <- componentsHHH4(x)
+  components <- componentsHHH4ZI(x)
 
   ## CAVE: this function ignores epidemic covariates/offsets
   ##       and unit-specific seasonality
@@ -840,96 +759,9 @@ getMaxEV_season <- function (x)
        Lambda.const = createLambda(0))
 }
 
-
-## Determine the time point t of the start of a season in a hhh4() fit.
-## If \code{object$stsObj@start[2] == 1}, it simply equals
-## \code{object$control$data$t[1]}. Otherwise, the \code{stsObj} time series
-## starts within a year (at sample \code{s}, say) and the beginning of
-## the next season is
-## \code{object$control$data$t[1] + object$stsObj@freq - s + 1}.
-getSeasonStart <- function (object)
-{
-  if ((startsample <- object$stsObj@start[2]) == 1) {
-    object$control$data$t[1L]
-  } else {
-    object$control$data$t[1L] + object$stsObj@freq-startsample + 1
-  }
-}
-
-
-
 ###
 ### plot neighbourhood weight as a function of distance (neighbourhood order)
 ###
-
-plotHHH4_neweights <- function (x, plotter = boxplot, ...,
-                                exclude = 0, maxlag = Inf)
-{
-  plotter <- match.fun(plotter)
-
-  ## orders of neighbourhood (o_ji)
-  nbmat <- neighbourhood(x$stsObj)
-  if (all(nbmat %in% 0:1)) {
-    message("'neighbourhood(x$stsObj)' is binary; ",
-            "computing neighbourhood orders ...")
-    nbmat <- nbOrder(nbmat, maxlag=maxlag)
-  }
-
-  ## extract (estimated) weight matrix (w_ji)
-  W <- getNEweights(x)
-  if (is.null(W)) {  # if no spatio-temporal component in the model
-    W <- nbmat
-    W[] <- 0
-  }
-
-  ## draw the boxplot
-  Distance <- factor(nbmat, exclude = exclude)
-  notexcluded <- which(!is.na(Distance))
-  Distance <- Distance[notexcluded]
-  Weight <- W[notexcluded]
-  plotter(Weight ~ Distance, ...)
-}
-
-
-
-###
-### auxiliary functions
-###
-
-yearepoch2point <- function (yearepoch, frequency, toleft=FALSE)
-  yearepoch[1L] + (yearepoch[2L] - toleft) / frequency
-
-
-getHHH4list <- function (..., .names = NA_character_)
-{
-  objects <- list(...)
-  if (length(objects) == 1L && is.list(objects[[1L]]) &&
-      inherits(objects[[1L]][[1L]], "hhh4")) {
-    ## ... is a single list of fits
-    objects <- objects[[1L]]
-    if (is.null(names(objects))) names(objects) <- seq_along(objects)
-  } else {
-    names(objects) <- if (is.null(names(objects))) .names else {
-      ifelse(nzchar(names(objects)), names(objects), .names)
-    }
-  }
-  if (!all(sapply(objects, inherits, what="hhh4")))
-    stop("'...' must consist of hhh4()-fits only")
-
-  ## check common epoch, start and frequency and append them as attributes
-  epoch <- unique(t(sapply(objects, function(x) x$stsObj@epoch)))
-  if (nrow(epoch) > 1)
-    stop("supplied hhh4-models obey different 'epoch's")
-  attr(objects, "epoch") <- drop(epoch)
-  start <- unique(t(sapply(objects, function(x) x$stsObj@start)))
-  if (nrow(start) > 1)
-    stop("supplied hhh4-models obey different start times")
-  attr(objects, "start") <- drop(start)
-  freq <- unique(sapply(objects, function(x) x$stsObj@freq))
-  if (length(freq)>1)
-    stop("supplied hhh4-models obey different frequencies")
-  attr(objects, "freq") <- freq
-
-  ## done
-  return(objects)
-}
+#' @rdname plot.hhh4ZI
+#' @export
+plotHHH4ZI_neweights <- surveillance::plotHHH4_neweights
