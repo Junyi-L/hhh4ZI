@@ -6,16 +6,11 @@
 \alias{plotHHH4ZI_fitted1}
 \alias{plotHHH4ZI_maps}
 \alias{plotHHH4ZI_ri}
-\alias{plotHHH4ZI_maxEV}
 \alias{plotHHH4ZI_season}
 \alias{plotHHH4ZI_neweights}
 \title{lots for Fitted hhh4ZI-models}
 \usage{
-plot.hhh4ZI(
-  x,
-  type = c("fitted", "season", "maxEV", "maps", "ri", "neweights"),
-  ...
-)
+plot.hhh4ZI(x, type = c("fitted", "season", "maps", "ri", "neweights"), ...)
 
 plotHHH4ZI_fitted(
   x,
@@ -82,13 +77,6 @@ plotHHH4ZI_ri(
   sp.layout = NULL,
   gpar.missing = list(col = "darkgrey", lty = 2, lwd = 2),
   ...
-)
-
-plotHHH4ZI_maxEV(
-  ...,
-  matplot.args = list(),
-  refline.args = list(),
-  legend.args = list()
 )
 
 plotHHH4ZI_season(

@@ -25,7 +25,7 @@
 #' @export
 # no maxEV
 plot.hhh4ZI <- function (x,
-                       type = c("fitted", "season", "maxEV", "maps", "ri", "neweights"),
+                       type = c("fitted", "season", "maps", "ri", "neweights"),
                        ...)
 {
   stopifnot(x$convergence)
@@ -84,7 +84,7 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
     pt.col <- col[4L]
     rev(col[-4L])
   } else {
-    plotHHH4ZI_fitted_check_col_decompose(col, decompose)
+    surveillance:::plotHHH4_fitted_check_col_decompose(col, decompose)
   }
 
   ## setup graphical parameters
@@ -156,12 +156,12 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
   obs <- if (total) rowSums(observed(stsObj)) else observed(stsObj)[,unit]
 
   ## time range for plotting
-  start0 <- yearepoch2point(stsObj@start, stsObj@freq, toleft=TRUE)
-  start <- yearepoch2point(start, stsObj@freq)
+  start0 <- surveillance:::yearepoch2point(stsObj@start, stsObj@freq, toleft=TRUE)
+  start <- surveillance:::yearepoch2point(start, stsObj@freq)
   tp <- start0 + seq_along(obs)/stsObj@freq # all observation time points
   if (start < start0 || start > tp[length(tp)])
     stop("'start' is not within the time range of 'x$stsObj'")
-  end <- if(is.null(end)) tp[length(tp)] else yearepoch2point(end,stsObj@freq)
+  end <- if(is.null(end)) tp[length(tp)] else surveillance:::yearepoch2point(end,stsObj@freq)
   stopifnot(start < end)
   tpInRange <- which(tp >= start & tp <= end)            # plot only those
   tpInSubset <- intersect(x$control$subset, tpInRange)   # fitted time points
@@ -265,6 +265,7 @@ plotHHH4ZI_maps <- function (x,
 
   ## extract district-specific mean components
   if (is.null(meanHHH)) {
+    gamma <- x$gamma
     meanHHH <- surveillance:::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
     meanHHH <- lapply(meanHHH[1:5],"*", 1 - gamma)
 
@@ -343,155 +344,6 @@ plotHHH4ZI_maps <- function (x,
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_ri <- surveillance:::plotHHH4_ri
-
-###
-### Plot the course of the dominant eigenvalue of one or several hhh4-fits
-###
-#' @rdname plot.hhh4ZI
-#' @export
-plotHHH4ZI_maxEV <- function (...,
-                            matplot.args = list(), refline.args = list(),
-                            legend.args = list())
-{
-  objnams <- unlist(lapply(match.call(expand.dots=FALSE)$..., deparse))
-  objects <- getHHH4list(..., .names = objnams)
-
-  ## get time points
-  epoch <- attr(objects, "epoch")
-  start <- attr(objects, "start")
-  freq <- attr(objects, "freq")
-  start0 <- yearepoch2point(start, freq, toleft=TRUE)
-  tp <- start0 + seq_along(epoch) / freq
-
-  ## compute course of dominant eigenvalue for all models
-  maxEV <- sapply(objects, getMaxEV, simplify=TRUE, USE.NAMES=TRUE)
-
-  ## line style
-  matplot.args <- modifyList(
-    list(type="l", col=c(1,2,6,3), lty=c(1,3,2,4), lwd=1.7, cex=1, pch=NULL,
-         xlab="", ylab="dominant eigenvalue", ylim=c(0,max(2,maxEV))),
-    matplot.args)
-
-  ## main plot
-  do.call("matplot", c(list(x=tp, y=maxEV), matplot.args))
-
-  ## add reference line
-  if (is.list(refline.args))
-    do.call("abline", modifyList(list(h=1, lty=3, col="grey"),
-                                 refline.args))
-
-  ## add legend
-  if (missing(legend.args) && length(objects) == 1)
-    legend.args <- NULL             # omit legend
-  if (is.list(legend.args)) {
-    legend.args <- modifyList(
-      c(list(x="topright", inset=0.02, legend=names(objects), bty="n"),
-        matplot.args[c("col", "lwd", "lty", "pch")],
-        with(matplot.args, list(pt.cex=cex, text.col=col))),
-      legend.args)
-    do.call("legend", legend.args)
-  }
-
-  ## done
-  invisible(maxEV)
-}
-
-getMaxEV <- function (x)
-{
-  Lambda <- createLambda(x)
-  if (identical(type <- attr(Lambda, "type"), "zero")) {
-    rep.int(0, nrow(x$stsObj))
-  } else {
-    diagonal <- identical(type, "diagonal")
-    vapply(X = seq_len(nrow(x$stsObj)),
-           FUN = function (t)
-             maxEV(Lambda(t), symmetric = FALSE, diagonal = diagonal),
-           FUN.VALUE = 0, USE.NAMES = FALSE)
-  }
-}
-
-## generate a function that computes the Lambda_t matrix
-createLambda <- function (object)
-{
-  nTime <- nrow(object$stsObj)
-  nUnit <- object$nUnit
-  if (identical(componentsHHH4ZI(object), "end")) { # no epidemic components
-    zeromat <- matrix(0, nUnit, nUnit)
-    Lambda <- function (t) zeromat
-    attr(Lambda, "type") <- "zero"
-    return(Lambda)
-  }
-
-  exppreds <- get_exppreds_with_offsets(object)
-
-  W <- getNEweights(object)
-  Wt <- if (is.null(W)) {
-    NULL
-  } else if (is.matrix(W)) {
-    function (t) W
-  } else {
-    function (t) W[,,t]
-  }
-
-  type <- NULL
-  Lambda <- if (is.null(Wt)) {        # no neighbourhood component
-    type <- "diagonal"
-    function (t) {
-      stopifnot(isScalar(t) && t > 0 && t <= nTime)
-      diag(exppreds$ar[t,], nUnit, nUnit)
-    }
-  } else {
-    function (t) {
-      stopifnot(isScalar(t) && t > 0 && t <= nTime)
-      Lambda <- exppreds$ne[t,] * t(Wt(t))
-      diag(Lambda) <- diag(Lambda) + exppreds$ar[t,]
-      Lambda
-    }
-  }
-  attr(Lambda, "type") <- type
-  Lambda
-}
-
-## extract exppreds multiplied with offsets
-## note: theta = coef(object) would also work since psi is not involved here
-get_exppreds_with_offsets <- function (object,
-                                       subset = seq_len(nrow(object$stsObj)),
-                                       theta = object$coefficients)
-{
-  model <- surveillance:::terms.hhh4(object)
-  means <- meanHHH(theta, model, subset = subset)
-  res <- sapply(X = c("ar", "ne", "end"), FUN = function (comp) {
-    exppred <- means[[paste0(comp, ".exppred")]]
-    offset <- object$control[[comp]]$offset
-    if (length(offset) > 1) offset <- offset[subset,,drop=FALSE]
-    exppred * offset
-  }, simplify = FALSE, USE.NAMES = TRUE)
-  res
-}
-
-## determine the dominant eigenvalue of the Lambda matrix
-maxEV <- function (Lambda,
-                   symmetric = isSymmetric.matrix(Lambda),
-                   diagonal = FALSE)
-{
-  maxEV <- if (diagonal) {
-    max(Lambda)  # faster than max(diag(Lambda))
-  } else {
-    eigen(Lambda, symmetric = symmetric, only.values = TRUE)$values[1L]
-  }
-
-  ## dominant eigenvalue may be complex
-  if (is.complex(maxEV)) {
-    if (Im(maxEV) == 0) { # if other eigenvalues are complex
-      Re(maxEV)
-    } else {
-      warning("dominant eigenvalue is complex, using its absolute value")
-      abs(maxEV)
-    }
-  } else {
-    maxEV
-  }
-}
 
 
 
@@ -611,21 +463,21 @@ plotHHH4ZI_season <- function (...,
   }
 
   ## plot seasonality of dominant eigenvalue
-  if ("maxEV" %in% components) {
-    seasons[["maxEV"]] <- vapply(objects, FUN = function (obj) {
-      getMaxEV_season(obj)$maxEV.season
-    }, FUN.VALUE = numeric(freq), USE.NAMES = TRUE)
-    do.call("matplot",
-            c(list(seasons[["maxEV"]], xlim=xlim,
-                   ylim=if (is.null(ylim[["maxEV"]]))
-                     c(0,max(2,seasons[["maxEV"]])) else ylim[["maxEV"]],
-                   xlab=xlab, ylab=ylab[["maxEV"]],
-                   main=main[["maxEV"]]), matplot.args))
-    if (is.list(refline.args))
-      do.call("abline", modifyList(list(h=1, lty=3, col="grey"),
-                                   refline.args))
-    if (4 %in% legend) do.call("legend", legend.args)
-  }
+  # if ("maxEV" %in% components) {
+  #   seasons[["maxEV"]] <- vapply(objects, FUN = function (obj) {
+  #     getMaxEV_season(obj)$maxEV.season
+  #   }, FUN.VALUE = numeric(freq), USE.NAMES = TRUE)
+  #   do.call("matplot",
+  #           c(list(seasons[["maxEV"]], xlim=xlim,
+  #                  ylim=if (is.null(ylim[["maxEV"]]))
+  #                    c(0,max(2,seasons[["maxEV"]])) else ylim[["maxEV"]],
+  #                  xlab=xlab, ylab=ylab[["maxEV"]],
+  #                  main=main[["maxEV"]]), matplot.args))
+  #   if (is.list(refline.args))
+  #     do.call("abline", modifyList(list(h=1, lty=3, col="grey"),
+  #                                  refline.args))
+  #   if (4 %in% legend) do.call("legend", legend.args)
+  # }
 
   ## invisibly return the data that has been plotted
   invisible(seasons)
@@ -683,81 +535,6 @@ getSeason <- function(x, component = c("end", "ar", "ne", "zi"), unit = 1)
 }
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# compute dominant eigenvalue of Lambda_t
-# CAVE: no support for Lambda_it
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-getMaxEV_season <- function (x)
-{
-  stopifnot(inherits(x, "hhh4"))
-  nUnits <- x$nUnit
-  freq <- x$stsObj@freq
-  components <- componentsHHH4ZI(x)
-
-  ## CAVE: this function ignores epidemic covariates/offsets
-  ##       and unit-specific seasonality
-  if (nUnits > 1L && any(c("ar", "ne") %in% components)) {
-    compOK <- vapply(x$control[c("ar","ne")], FUN = function (comp) {
-      terms <- terms(x)$terms
-      epiterms <- terms[,terms["offsetComp",] %in% seq_len(2L),drop=FALSE]
-      identical(as.numeric(comp$offset), 1) &&
-        length(all.vars(removeTimeFromFormula(comp$f))) == 0L &&
-        all(!unlist(epiterms["unitSpecific",]))
-    }, FUN.VALUE = TRUE, USE.NAMES = FALSE)
-    if (any(!compOK))
-      warning("epidemic components have (unit-specific) ",
-              "covariates/offsets not accounted for;\n",
-              "  use getMaxEV() or plotHHH4_maxEV()")
-  }
-
-  ## global intercepts and seasonality
-  s2.lambda <- getSeason(x, "ar")
-  s2.phi <- getSeason(x, "ne")
-
-  ## unit-specific intercepts
-  ris <- ranef.hhh4(x, tomatrix=TRUE)
-  ri.lambda <- ris[,pmatch("ar.ri", colnames(ris), nomatch=0L),drop=TRUE]
-  if (length(ri.lambda) == 0L) ri.lambda <- rep.int(0, nUnits)
-  ri.phi <- ris[,pmatch("ne.ri", colnames(ris), nomatch=0L),drop=TRUE]
-  if (length(ri.phi) == 0L) ri.phi <- rep.int(0, nUnits)
-
-  ## get neighbourhood weights as a function of time
-  W <- getNEweights(x)  # NULL, matrix or 3-dim array
-  if (!is.null(W) && !is.matrix(W))
-    stop("neighbourhood weights are time-varying; ",
-         # and thus probably changing within or across seasons
-         "use getMaxEV() or plotHHH4_maxEV()")
-
-  ## create the Lambda_t matrix
-  createLambda <- function (t)
-  {
-    Lambda <- if ("ne" %in% components) {
-      exp(s2.phi$intercept + ri.phi + if(t==0) 0 else s2.phi$season[t]) * t(W)
-    } else matrix(0, nUnits, nUnits)
-    if ("ar" %in% components) {
-      diag(Lambda) <- diag(Lambda) + exp(s2.lambda$intercept + ri.lambda +
-                                           if(t==0) 0 else s2.lambda$season[t])
-    }
-    Lambda
-  }
-
-  ## do this for t in 0:freq
-  diagonal <- !("ne" %in% components)
-  .maxEV <- function (t) {
-    maxEV(createLambda(t), symmetric = FALSE, diagonal = diagonal)
-  }
-  maxEV.const <- .maxEV(0)
-  maxEV.season <- if (all(c(s2.phi$season, s2.lambda$season) %in% c(-Inf, 0))) {
-    rep.int(maxEV.const, freq)
-  } else {
-    vapply(X = seq_len(freq), FUN = .maxEV, FUN.VALUE = 0, USE.NAMES = FALSE)
-  }
-
-  ## Done
-  list(maxEV.season = maxEV.season,
-       maxEV.const  = maxEV.const,
-       Lambda.const = createLambda(0))
-}
 
 ###
 ### plot neighbourhood weight as a function of distance (neighbourhood order)
