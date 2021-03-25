@@ -236,23 +236,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
 
 
 ## extract estimated overdispersion in dnbinom() parametrization, as full matrix
-psi2size.oneStepAhead <- function (object)
-{
-  if (is.null(object$psi)) # Poisson model
-    return(NULL)
-
-  size <- exp(object$psi) # a matrix with 1 or nUnit columns
-
-  ## ensure that we always have a full 'size' matrix with nUnit columns
-  dimpred <- dim(object$pred)
-  if (ncol(size) != dimpred[2L]) { # => ncol(size)=1, unit-independent psi
-    size <- rep.int(size, dimpred[2L])
-    dim(size) <- dimpred
-  }
-
-  dimnames(size) <- list(rownames(object$psi), colnames(object$pred))
-  size
-}
+psi2size.oneStepAhead <- surveillance:::psi2size.oneStepAhead
 
 # Quantiles of the one-step-ahead forecasts
 #' @rdname oneStepAhead
