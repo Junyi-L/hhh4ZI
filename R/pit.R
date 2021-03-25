@@ -131,7 +131,10 @@ pzinegbin <- VGAM::pzinegbin
 pit.oneStepAhead_hhh4ZI <- function (x, units = NULL, ...)
 {
   if (is.null(units)) {
-    .pit(x = x$observed, mu = x$pred, size = psi2size.oneStepAhead(x), ...)
+    .pit(x = x$observed,
+         mu = x$mu,
+         gamma = x$gamma,
+         size = psi2size.oneStepAhead(x), ...)
   } else if(is.null(gamma)){
     .pit(x = x$observed[, units, drop = FALSE],
          mu = x$pred[, units, drop = FALSE],
@@ -139,8 +142,8 @@ pit.oneStepAhead_hhh4ZI <- function (x, units = NULL, ...)
          ...)
   } else{
     .pit(x = x$observed[, units, drop = FALSE],
-         mu = x$pred[, units, drop = FALSE],
-         gamma = x$pred[, units, drop = FALSE],
+         mu = x$mu[, units, drop = FALSE],
+         gamma = x$gamma[, units, drop = FALSE],
          size = psi2size.oneStepAhead(x)[, units, drop = FALSE],
          ...)
 
