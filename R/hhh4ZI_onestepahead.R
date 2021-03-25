@@ -249,7 +249,7 @@ quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/10
 
   size <- psi2size.oneStepAhead(x)
 
-  vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
+  qs <- vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
          munb = x$pred, size = size, pstr0 = x$gamma)
 
   ## one tp, one unit -> qs is a vector of length np
