@@ -2,6 +2,7 @@
 % Please edit documentation in R/hhh4ZI_onestepahead.R
 \name{oneStepAhead}
 \alias{oneStepAhead}
+\alias{oneStepAhead.hhh4}
 \alias{oneStepAhead.hhh4ZI}
 \alias{quantile.oneStepAhead_hhh4ZI}
 \alias{confint.oneStepAhead_hhh4ZI}
@@ -9,6 +10,16 @@
 \title{Predictive Model Assessment for hhh4ZI Models}
 \usage{
 oneStepAhead(result, tp, ...)
+
+\method{oneStepAhead}{hhh4}(
+  result,
+  tp,
+  type = c("rolling", "first", "final"),
+  which.start = c("current", "final"),
+  keep.estimates = FALSE,
+  verbose = TRUE,
+  cores = 1
+)
 
 \method{oneStepAhead}{hhh4ZI}(
   result,

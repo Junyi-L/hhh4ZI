@@ -4,7 +4,7 @@
 \alias{hhh4ZI.hhh4}
 \title{Refit a HHH4 model to a HHH4ZI model}
 \usage{
-\method{hhh4ZI}{hhh4}(object, zi = list(f = ~-1, lag = 1, lag.unitSpecific = FALSE))
+\method{hhh4ZI}{hhh4}(object, control = list(f = ~-1, lag = 1, lag.unitSpecific = FALSE), ...)
 }
 \description{
 Refit a HHH4 model to a HHH4ZI model

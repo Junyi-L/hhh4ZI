@@ -6,7 +6,7 @@
 \title{Fitting zero-inflated HHH Models with Random Effects
 and Neighbourhood Structure}
 \usage{
-hhh4ZI(stsObj, control, ...)
+hhh4ZI(object, control, ...)
 
 \method{hhh4ZI}{sts}(
   stsObj,
@@ -22,9 +22,6 @@ hhh4ZI(stsObj, control, ...)
 )
 }
 \arguments{
-\item{stsObj}{object of class \code{"\linkS4class{sts}"} containing the (multivariate)
-count data time series.}
-
 \item{control}{a list containing the model specification and control arguments,
  the parts relating to \code{hhh4} model is the same as in \code{surveillance::hhh4}:
 \itemize{
@@ -171,6 +168,9 @@ reconstructed by the \code{\link{terms}}-method for class
 \code{control}, which are both part of the returned
 \code{"hhh4ZI"} object).}
 }}
+
+\item{stsObj}{object of class \code{"\linkS4class{sts}"} containing the (multivariate)
+count data time series.}
 
 \item{check.analyticals}{{logical (or a subset of
 \code{c("numDeriv", "maxLik")}), indicating if (how) the implemented
