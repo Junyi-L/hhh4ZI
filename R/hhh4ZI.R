@@ -255,7 +255,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' summary(fit)
 #' sim_data <- simulate(fit, simplify = FALSE)
 #' @export
-hhh4ZI <- function (stsObj, control, ...) UseMethod("hhh4ZI")
+hhh4ZI <- function (object, control, ...) UseMethod("hhh4ZI")
 
 #' @rdname hhh4ZI
 #' @export
@@ -427,8 +427,6 @@ setControl <- function (control, stsObj)
     environment(defaultControl$zi$f)<- .GlobalEnv
   control <- modifyList(defaultControl, control)
 
-  if(!(control$family %in% c("NegBin1", "NegBinM")))
-    stop("control$family must be either NegBin1 or NegBinM")
 
   ## check that component specifications are list objects
   for (comp in c("ar", "ne", "end", "zi")) {
@@ -557,6 +555,8 @@ setControl <- function (control, stsObj)
     }
   } else {
     control$family <- match.arg(control$family, defaultControl$family)
+    if(!(control$family %in% c("NegBin1", "NegBinM")))
+      stop("control$family must be either NegBin1, NegBinM, or a factor")
   }
 
   if (!is.vector(control$subset, mode="numeric") ||
