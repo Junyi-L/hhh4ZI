@@ -28,15 +28,19 @@ oneStepAhead <- function (result, tp, ...) UseMethod("oneStepAhead")
 
 #' @rdname oneStepAhead
 #' @export
+oneStepAhead.hhh4 <- surveillance::oneStepAhead
+
+#' @rdname oneStepAhead
+#' @export
 oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit)
-                         tp,     # scalar: one-step-ahead predictions for time
-                         # points (tp+1):nrow(stsObj), or tp=c(from, to)
-                         type = c("rolling", "first", "final"),
-                         which.start = c("current", "final"), #if type="rolling"
-                         keep.estimates = FALSE,
-                         verbose = TRUE, # verbose-1 is used as verbose setting
-                         # for sequentially refitted hhh4 models
-                         cores = 1) # if which.start="final", the predictions
+                                tp,     # scalar: one-step-ahead predictions for time
+                                # points (tp+1):nrow(stsObj), or tp=c(from, to)
+                                type = c("rolling", "first", "final"),
+                                which.start = c("current", "final"), #if type="rolling"
+                                keep.estimates = FALSE,
+                                verbose = TRUE, # verbose-1 is used as verbose setting
+                                # for sequentially refitted hhh4 models
+                                cores = 1) # if which.start="final", the predictions
   # can be computed in parallel
 {
   stopifnot(inherits(result, "hhh4ZI"))
@@ -88,7 +92,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
     if (do_pb)
       cat("\nRefitting model at first time point t =", tps[1L], "...\n")
     update.hhh4ZI(result, subset.upper = tps[1L], use.estimates = TRUE,
-                keep.terms = TRUE) # need "model" -> $terms
+                  keep.terms = TRUE) # need "model" -> $terms
   } else result
   if (!fit$convergence) stop("initial fit did not converge")
 
@@ -96,9 +100,9 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
   pred <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
                  dimnames=list(tps+1, colnames(observed)))
   gamma <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
-                 dimnames=list(tps+1, colnames(observed)))
+                  dimnames=list(tps+1, colnames(observed)))
   mu <- matrix(NA_real_, nrow=ntps, ncol=nUnits,
-                 dimnames=list(tps+1, colnames(observed)))
+               dimnames=list(tps+1, colnames(observed)))
 
   if (withPsi)
     psi <- matrix(NA_real_, nrow=ntps, ncol=dimPsi,
@@ -144,9 +148,9 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
         cat("One-step-ahead prediction @ t =", tp, "...\n")
       if (type == "rolling") { # update fit
         fit <- update.hhh4ZI(result, subset.upper=tp, use.estimates=TRUE,
-                           start=if (is.list(which.start)) which.start,
-                           verbose=FALSE, # chaotic in parallel
-                           keep.terms=TRUE) # need "model" -> $terms
+                             start=if (is.list(which.start)) which.start,
+                             verbose=FALSE, # chaotic in parallel
+                             keep.terms=TRUE) # need "model" -> $terms
         if (!fit$convergence) {
           cat("WARNING: No convergence @ t =", tp, "!\n")
           return(resTemplate)
@@ -182,9 +186,9 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
         } else if (which.start == "current") surveillance:::hhh4coef2start(fit)
         ## else NULL
         fit <- update.hhh4ZI(result, subset.upper=tps[i],
-                           start=start, # takes precedence
-                           use.estimates=TRUE,
-                           keep.terms=TRUE) # need "model" -> $terms
+                             start=start, # takes precedence
+                             use.estimates=TRUE,
+                             keep.terms=TRUE) # need "model" -> $terms
         if (!fit$convergence) {
           if (do_pb) cat("\n")
           cat("WARNING: No convergence @ t =", tps[i], "!\n")
@@ -226,7 +230,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
                                     Sigma.orig = Sigma.orig,
                                     logliks = logliks)
   )
-  class(res) <- c("oneStepAhead_hhh4ZI","oneStepAhead")
+  class(res) <- "oneStepAhead_hhh4ZI"
   res
 }
 
@@ -260,13 +264,10 @@ quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/10
   names(probs) <- paste(format(100*probs, trim=TRUE, scientific=FALSE, digits=3), "%")
 
   size <- psi2size.oneStepAhead(x)
-  qs <- if (is.null(size)) {
-    vapply(X = probs, FUN = qpois, FUN.VALUE = x$pred,
-           lambda = x$pred)
-  } else {
-    vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
-           munb = x$pred, size = size, pstr0 = x$gamma)
-  }
+
+  vapply(X = probs, FUN = VGAM::qzinegbin, FUN.VALUE = x$pred,
+         munb = x$pred, size = size, pstr0 = x$gamma)
+
   ## one tp, one unit -> qs is a vector of length np
   ## otherwise, 'qs' has dimensions ntps x nUnit x np
   ## if nUnit==1, we return an ntps x np matrix, otherwise an array
@@ -291,7 +292,7 @@ confint.oneStepAhead_hhh4ZI <- function (object, parm, level = 0.95, ...)
 #' @rdname oneStepAhead
 #' @export
 plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
-                               start = NULL, ...)
+                                      start = NULL, ...)
 {
   stopifnot(length(unit) == 1, length(probs) > 1)
 
@@ -309,3 +310,5 @@ plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
   fanplot(quantiles = qs, probs = probs, means = ms,
           observed = obs, start = start, ...)
 }
+
+## pit
