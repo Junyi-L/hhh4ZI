@@ -11,7 +11,7 @@ of each state at 31.12.2006, obtained from the Federal Statistical Office of Ger
 }
 \source{
 SurvStat@RKI 2.0 (https://survstat.rki.de),
-Robert Koch Institute; Queried on 20 February 2021.
+Robert Koch Institute; Queried on 26 March 2021.
 }
 \usage{
 data(measlesDE)
