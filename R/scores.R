@@ -189,7 +189,7 @@ scores.default <- function(x, mu, size = NULL, gamma = NULL,
 
   ## append sign of x-mu
   if (sign & is.null(gamma))
-    scorelist <- c(scorelist, list("sign" = sign(x-mu))) else
+    scorelist <- c(scorelist, list("sign" = sign(x-mu))) else if(sign)
       scorelist <- c(scorelist, list("sign" = sign(x- (1 - gamma)*mu)))
 
   ## gather scores in an array
