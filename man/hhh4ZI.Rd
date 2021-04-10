@@ -229,12 +229,12 @@ decomposition of the conditional mean into \emph{epidemic} and
 The inflated parameter is a logit-linear predictor and can have autoregressive terms.
 }
 \examples{
-data("measlesDE", package = "hhh4ZI")
+data("measles", package = "hhh4ZI")
 library(surveillance)
-measlesDE <- aggregate(measlesDE, by = "time", nfreq = 26)
-adjmat <- poly2adjmat(measlesDE@map)
+measles <- aggregate(measles, by = "time", nfreq = 26)
+adjmat <- poly2adjmat(measles@map)
 neW1 <- adjmat/colSums(adjmat)
-fit <- hhh4ZI(measlesDE,
+fit <- hhh4ZI(measles,
 control = list(
   ar = list(f = ~1,
             offset = 1,
