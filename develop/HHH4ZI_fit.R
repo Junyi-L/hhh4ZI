@@ -1,11 +1,10 @@
 # library(hhh4ZI)
-data("measlesDE", package = "hhh4ZI")
-measlesDE <- aggregate(measlesDE, by = "time", nfreq = 26)
+data("measles", package = "hhh4ZI")
+measles <- aggregate(measles, by = "time", nfreq = 26)
 
-stsObj <- measlesDE
-neW <- neighbourhood(measlesDE)
-adjmat <- poly2adjmat(measlesDE@map)
-neW1 <- adjmat/colSums(adjmat)
+stsObj <- measles
+neW <- neighbourhood(measles)
+
 
 f.1 <- addSeason2formula(f = ~-1 + fe(1, unitSpecific = TRUE),
                            S = 1, period = 26)
@@ -22,7 +21,7 @@ fitZi <- hhh4ZI(stsObj,
                   ne = list(f = ~1,        # a formula "exp(x'phi) * sum_j w_ji * y_j,t-lag"
                             offset = 1,      # multiplicative offset
                             lag = 1,         # regression on y_j,t-lag
-                            weights = neW1,  # weights w_ji
+                            weights = neW == 1,  # weights w_ji
                             scale = NULL,    # such that w_ji = scale * weights
                             normalize = TRUE), # w_ji -> w_ji / rowSums(w_ji), after scaling
                   end = list(f = f.1,        # a formula "exp(x'nu) * n_it"
@@ -61,7 +60,7 @@ fitH <- hhh4(stsObj,
                ne = list(f = ~-1 + ri(type = "iid", corr = "all"),        # a formula "exp(x'phi) * sum_j w_ji * y_j,t-lag"
                          offset = 1,      # multiplicative offset
                          lag = 1,         # regression on y_j,t-lag
-                         weights = neW1,  # weights w_ji
+                         weights = neW == 1,  # weights w_ji
                          scale = NULL,    # such that w_ji = scale * weights
                          normalize = TRUE), # w_ji -> w_ji / rowSums(w_ji), after scaling
                end = list(f = ~-1 + ri(type = "iid", corr = "all"),        # a formula "exp(x'nu) * n_it"
@@ -92,7 +91,7 @@ fitH_ZI <- hhh4ZI(fitH,
                     ne = list(f = ~-1 + ri(type = "iid", corr = "all"),        # a formula "exp(x'phi) * sum_j w_ji * y_j,t-lag"
                               offset = 1,      # multiplicative offset
                               lag = 1,         # regression on y_j,t-lag
-                              weights = neW1,  # weights w_ji
+                              weights = neW == 1,  # weights w_ji
                               scale = NULL,    # such that w_ji = scale * weights
                               normalize = TRUE), # w_ji -> w_ji / rowSums(w_ji), after scaling
                     end = list(f = ~-1 + ri(type = "iid", corr = "all"),        # a formula "exp(x'nu) * n_it"
