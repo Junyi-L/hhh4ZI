@@ -25,8 +25,8 @@
 #' @export
 # no maxEV
 plot.hhh4ZI <- function (x,
-                       type = c("fitted", "season", "maps", "ri", "neweights"),
-                       ...)
+                         type = c("fitted", "season", "maps", "ri", "neweights"),
+                         ...)
 {
   stopifnot(x$convergence)
   cl <- sys.call()  # not match.call() because plotHHH4_season() has no 'x'
@@ -47,12 +47,12 @@ plot.hhh4ZI <- function (x,
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
-                             col = c("grey85", "blue", "orange"),
-                             pch = 19, pt.cex = 0.6, pt.col = 1,
-                             par.settings = list(),
-                             legend = TRUE, legend.args = list(),
-                             legend.observed = FALSE,
-                             decompose = NULL, total = FALSE, meanHHH = NULL, ...)
+                               col = c("grey85", "blue", "orange"),
+                               pch = 19, pt.cex = 0.6, pt.col = 1,
+                               par.settings = list(),
+                               legend = TRUE, legend.args = list(),
+                               legend.observed = FALSE,
+                               decompose = NULL, total = FALSE, meanHHH = NULL, ...)
 {
   if (total) {
     units <- "Overall"  # only used as a label
@@ -63,8 +63,8 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
   if (isTRUE(decompose)) decompose <- colnames(x$stsObj)
 
   ## get decomposed mean => no need to compute it in each plotHHH4_fitted1()
-    gamma <- x$gamma
-    if (is.null(meanHHH)) {
+  gamma <- x$gamma
+  if (is.null(meanHHH)) {
     meanHHH <- if (is.null(decompose)) {
       mean_HHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
       lapply(mean_HHH[1:5],"*", 1 - gamma)
@@ -126,8 +126,8 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
   names(meanHHHunits) <- if (is.character(units)) units else colnames(x$stsObj)[units]
   for(i in seq_along(units)) {
     meanHHHunits[[i]] <- plotHHH4ZI_fitted1(x, unit=units[i], main=names[i],
-                                          col=col, pch=pch, pt.cex=pt.cex, pt.col=pt.col,
-                                          decompose=decompose, total=total, meanHHH=meanHHH, ...)
+                                            col=col, pch=pch, pt.cex=pt.cex, pt.col=pt.col,
+                                            decompose=decompose, total=total, meanHHH=meanHHH, ...)
     if (i %in% legend) do.call("legend", args=legend.args)
   }
   invisible(meanHHHunits)
@@ -137,11 +137,11 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
-                             col=c("grey85", "blue", "orange"),
-                             pch=19, pt.cex=0.6, pt.col=1, border=col,
-                             start=x$stsObj@start, end=NULL, xaxis=NULL,
-                             xlim=NULL, ylim=NULL, xlab="", ylab="No. infected",
-                             hide0s=FALSE, decompose=NULL, total=FALSE, meanHHH=NULL)
+                               col=c("grey85", "blue", "orange"),
+                               pch=19, pt.cex=0.6, pt.col=1, border=col,
+                               start=x$stsObj@start, end=NULL, xaxis=NULL,
+                               xlim=NULL, ylim=NULL, xlab="", ylab="No. infected",
+                               hide0s=FALSE, decompose=NULL, total=FALSE, meanHHH=NULL)
 {
   stsObj <- x$stsObj
   if (!total && is.character(unit) &&
@@ -237,7 +237,7 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
   } else {
     non0 <- apply(X = meanHHHunit > 0, MARGIN = 2L, FUN = any)
     surveillance:::plotComponentPolygons(x = tp[tpInSubset], y = meanHHHunit[, non0, drop = FALSE],
-                          col = col[non0], border = border[non0], add = TRUE)
+                                         col = col[non0], border = border[non0], add = TRUE)
   }
 
   ## add observed counts within [start;end]
@@ -254,25 +254,25 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_maps <- function (x,
-                           which = c("mean", "endemic", "epi.own", "epi.neighbours", "gamma"),
-                           prop = FALSE, main = which, zmax = NULL, col.regions = NULL,
-                           labels = FALSE, sp.layout = NULL, ...,
-                           map = x$stsObj@map, meanHHH = NULL)
+                             which = c("mean", "endemic",
+                                       "epi.own", "epi.neighbours", "zi"),
+                             prop = FALSE, main = which, zmax = NULL, col.regions = NULL,
+                             labels = FALSE, sp.layout = NULL, ...,
+                             map = x$stsObj@map, meanHHH = NULL)
 {
   which <- match.arg(which, several.ok = TRUE)
   if (is.null(col.regions))
     col.regions <- surveillance:::.hcl.colors(10)
 
-  ## extract district-specific mean components
+    ## extract district-specific mean components
   if (is.null(meanHHH)) {
     gamma <- x$gamma
     meanHHH <- surveillance:::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
     meanHHH <- lapply(meanHHH[1:5],"*", 1 - gamma)
-
   }
-  gamma <- x$gamma
+
   element <- meanHHH[c("mean", "endemic", "epi.own", "epi.neighbours")]
-  element$gamma <- gamma
+  element$zi <- gamma
   ## select relevant components and convert to an array
   meanHHH <- simplify2array(
     element,
@@ -317,12 +317,12 @@ plotHHH4ZI_maps <- function (x,
   grobs <- mapply(
     FUN = function (zcol, main, zmax)
       if (is.na(zmax)) { # automatic color breaks over range of values
-        if(zcol == "gamma") zmax = 1
+        if(zcol == "zi") zmax = 1
         spplot(map, zcol = zcol, main = main,
                cuts = length(col.regions) - 1L,
                col.regions = col.regions, sp.layout = sp.layout, ...)
       } else { # breakpoints from 0 to zmax
-        if(zcol == "gamma") zmax = 1
+        if(zcol == "zi") zmax = 1
         spplot(map, zcol = zcol, main = main,
                at = seq(0, zmax, length.out = length(col.regions) + 1L),
                col.regions = col.regions, sp.layout = sp.layout, ...)
@@ -344,10 +344,10 @@ plotHHH4ZI_maps <- function (x,
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_ri <- function (x, component, exp = FALSE,
-                         at = list(n = 10), col.regions = cm.colors(100),
-                         colorkey = TRUE, labels = FALSE, sp.layout = NULL,
-                         gpar.missing = list(col="darkgrey", lty=2, lwd=2),
-                         ...)
+                           at = list(n = 10), col.regions = cm.colors(100),
+                           colorkey = TRUE, labels = FALSE, sp.layout = NULL,
+                           gpar.missing = list(col="darkgrey", lty=2, lwd=2),
+                           ...)
 {
   ranefmatrix <- ranef.hhh4ZI(x, tomatrix=TRUE)
   if (is.null(ranefmatrix)) stop("model has no random effects")
@@ -393,35 +393,35 @@ plotHHH4ZI_ri <- function (x, component, exp = FALSE,
 }
 
 ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
-  {
-    if (object$dim[2L] > 0){
-      ranefvec <- tail(surveillance:::coef.hhh4(object, ...), object$dim[2L])
-    } else return(NULL)
-    if (intercept) tomatrix <- TRUE
-    if (!tomatrix) return(ranefvec)
+{
+  if (object$dim[2L] > 0){
+    ranefvec <- tail(surveillance:::coef.hhh4(object, ...), object$dim[2L])
+  } else return(NULL)
+  if (intercept) tomatrix <- TRUE
+  if (!tomatrix) return(ranefvec)
 
-    ## transform to a nUnits x c matrix (c %in% 1:3)
-    model <- terms.hhh4ZI(object)
-    idxRE <- model$indexRE
-    idxs <- unique(idxRE)
-    mat <- vapply(X = idxs, FUN = function (idx) {
-      RE <- ranefvec[idxRE==idx]
-      Z <- model$terms["Z.intercept",][[idx]]
-      "%m%" <- get(model$terms["mult",][[idx]])
-      c(Z %m% RE)
-    }, FUN.VALUE = numeric(model$nUnits), USE.NAMES = FALSE)
-    dimnames(mat) <- list(
-      colnames(model$response),
-      model$namesFE[match(idxs, model$indexFE)]
-    )
+  ## transform to a nUnits x c matrix (c %in% 1:3)
+  model <- terms.hhh4ZI(object)
+  idxRE <- model$indexRE
+  idxs <- unique(idxRE)
+  mat <- vapply(X = idxs, FUN = function (idx) {
+    RE <- ranefvec[idxRE==idx]
+    Z <- model$terms["Z.intercept",][[idx]]
+    "%m%" <- get(model$terms["mult",][[idx]])
+    c(Z %m% RE)
+  }, FUN.VALUE = numeric(model$nUnits), USE.NAMES = FALSE)
+  dimnames(mat) <- list(
+    colnames(model$response),
+    model$namesFE[match(idxs, model$indexFE)]
+  )
 
-    if (intercept) {
-      FE <- object$coefficients[colnames(mat)]
-      mat <- t(t(mat) + FE)
-    }
-
-    return(mat)
+  if (intercept) {
+    FE <- object$coefficients[colnames(mat)]
+    mat <- t(t(mat) + FE)
   }
+
+  return(mat)
+}
 
 ###
 ### Plot estimated seasonality (sine-cosine terms) of one or several hhh4-fits
@@ -432,12 +432,12 @@ ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
 #' @rdname plot.hhh4ZI
 #' @export
 plotHHH4ZI_season <- function (...,
-                             components = NULL, intercept = FALSE,
-                             xlim = NULL, ylim = NULL,
-                             xlab = NULL, ylab = "", main = NULL,
-                             par.settings = list(), matplot.args = list(),
-                             legend = NULL, legend.args = list(),
-                             refline.args = list(), unit = 1)
+                               components = NULL, intercept = FALSE,
+                               xlim = NULL, ylim = NULL,
+                               xlab = NULL, ylab = "", main = NULL,
+                               par.settings = list(), matplot.args = list(),
+                               legend = NULL, legend.args = list(),
+                               refline.args = list(), unit = 1)
 {
   objnams <- unlist(lapply(match.call(expand.dots=FALSE)$..., deparse))
   objects <- surveillance:::getHHH4list(..., .names = objnams)
