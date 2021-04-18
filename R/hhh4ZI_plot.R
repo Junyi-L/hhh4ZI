@@ -343,9 +343,85 @@ plotHHH4ZI_maps <- function (x,
 ###
 #' @rdname plot.hhh4ZI
 #' @export
-plotHHH4ZI_ri <- surveillance:::plotHHH4_ri
+plotHHH4ZI_ri <- function (x, component, exp = FALSE,
+                         at = list(n = 10), col.regions = cm.colors(100),
+                         colorkey = TRUE, labels = FALSE, sp.layout = NULL,
+                         gpar.missing = list(col="darkgrey", lty=2, lwd=2),
+                         ...)
+{
+  ranefmatrix <- ranef.hhh4ZI(x, tomatrix=TRUE)
+  if (is.null(ranefmatrix)) stop("model has no random effects")
+  stopifnot(length(component) == 1L)
+  if (is.na(comp <- pmatch(component, colnames(ranefmatrix))))
+    stop("'component' must (partially) match one of ",
+         paste(dQuote(colnames(ranefmatrix)), collapse=", "))
 
+  map <- as(x$stsObj@map, "SpatialPolygonsDataFrame")
+  if (length(map) == 0L) stop("'x$stsObj' has no map")
+  map$ranef <- ranefmatrix[,comp][row.names(map)]
+  .range <- c(-1, 1) * max(abs(map$ranef), na.rm = TRUE)  # 0-centered
+  if (exp) {
+    map$ranef <- exp(map$ranef)
+    .range <- exp(.range)
+  }
 
+  if (is.list(at)) {
+    at <- modifyList(list(n = 10, range = .range), at)
+    at <- if (exp) {
+      stopifnot(at$range[1] > 0)
+      scales::log_breaks(n = at$n)(at$range)
+    } else {
+      seq(at$range[1L], at$range[2L], length.out = at$n)
+    }
+    if (exp && isTRUE(colorkey))
+      colorkey <- list(at = log(at),
+                       labels = list(at = log(at), labels = at))
+  }
+
+  if (is.list(gpar.missing) && any(is.na(map$ranef))) {
+    sp.layout <- c(sp.layout,
+                   c(list("sp.polygons", map[is.na(map$ranef),]),
+                     gpar.missing))
+  }
+  if (!is.null(layout.labels <- layout.labels(map, labels))) {
+    sp.layout <- c(sp.layout, list(layout.labels))
+  }
+
+  spplot(map[!is.na(map$ranef),], zcol = "ranef",
+         sp.layout = sp.layout, col.regions = col.regions,
+         at = at, colorkey = colorkey, ...)
+}
+
+ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
+  {
+    if (object$dim[2L] > 0){
+      ranefvec <- tail(surveillance:::coef.hhh4(object, ...), object$dim[2L])
+    } else return(NULL)
+    if (intercept) tomatrix <- TRUE
+    if (!tomatrix) return(ranefvec)
+
+    ## transform to a nUnits x c matrix (c %in% 1:3)
+    model <- terms.hhh4ZI(object)
+    idxRE <- model$indexRE
+    idxs <- unique(idxRE)
+    mat <- vapply(X = idxs, FUN = function (idx) {
+      RE <- ranefvec[idxRE==idx]
+      Z <- model$terms["Z.intercept",][[idx]]
+      "%m%" <- get(model$terms["mult",][[idx]])
+      c(Z %m% RE)
+    }, FUN.VALUE = numeric(model$nUnits), USE.NAMES = FALSE)
+    dimnames(mat) <- list(
+      colnames(model$response),
+      model$namesFE[match(idxs, model$indexFE)]
+    )
+
+    if (intercept) {
+      FE <- object$coefficients[colnames(mat)]
+      mat <- t(t(mat) + FE)
+    }
+
+    return(mat)
+  }
 
 ###
 ### Plot estimated seasonality (sine-cosine terms) of one or several hhh4-fits
