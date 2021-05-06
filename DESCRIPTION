@@ -1,14 +1,13 @@
 Package: hhh4ZI
 Type: Package
-Title: Zero-inflated HHH Model
+Title: Zero-Inflated Endemic-Epidemic Count Time Series
 Version: 0.1.0
 Author: Junyi Lu, Sebastian Meyer
 Maintainer: Junyi Lu <junyi.lu@fau.de>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
-Encoding: UTF-8
+Description: Extending surveillance::hhh4() for zero-inflated infectious disease counts.
+License: GPL-2
 LazyData: true
 RoxygenNote: 7.1.0
-Depends: R (>= 3.6.3), methods, surveillance
-Imports: surveillance, numDeriv, maxLik, VGAM
+Depends: R (>= 3.6.0), surveillance
+Imports: VGAM
+Suggests: numDeriv, maxLik
