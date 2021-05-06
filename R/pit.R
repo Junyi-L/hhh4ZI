@@ -31,6 +31,7 @@
 
 #' @title Non-Randomized Version of the PIT Histogram (for Count Data)
 #' @rdname pit
+#' @importFrom surveillance pit
 #' @export
 pit.default <- function (x, pdistr, J=10, relative=TRUE, ..., plot = list())
 {
