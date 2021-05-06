@@ -21,113 +21,24 @@
 ################################################################################
 
 
-## x - observed count data
-## pdistr - predictive CDF or a list of such predictive CDF's,
-##          one for each data point x. If evaluated at x=-1 it must return 0
-## J - number of bins
-## ... - additional arguments for pdistr(), recycled to the length of x.
-##       Ignored if pdistr is a list.
-## plot - a list of arguments for plot.histogram (otherwise no plot is produced)
-
-#' @title Non-Randomized Version of the PIT Histogram (for Count Data)
-#' @rdname pit
-#' @importFrom surveillance pit
-#' @export
-pit.default <- function (x, pdistr, J=10, relative=TRUE, ..., plot = list())
-{
-  PxPxm1 <- pitPxPxm1(x, pdistr, ...)
-  Px <- PxPxm1[1L,]
-  Pxm1 <- PxPxm1[2L,]
-  if (any(Px == Pxm1)) {
-    ## This means the predictive probability of an observed x is zero.
-    ## Our predictive model is really bad if that happens.
-    warning("predictive distribution has 0 probability for observed 'x'")
-  }
-
-  breaks <- (0:J)/J
-
-  ## calculate \bar{F}(u) for scalar u
-  Fbar1 <- function (u, Px, Pxm1)
-  {
-    F_u <- punif(u, Pxm1, Px)  # also works for Pxm1 == Px => F_u = u >= Pxm1
-    mean(F_u)
-  }
-  Fbar_seq <- vapply(X = breaks, FUN = Fbar1, FUN.VALUE = 0,
-                     Px = Px, Pxm1 = Pxm1, USE.NAMES = FALSE)
-  scale <- if (relative) J else 1
-  f_j <- scale * diff.default(Fbar_seq)
-
-  res <- list(breaks = breaks, counts = f_j, density = f_j,
-              mids = breaks[-(J+1)] + 1/J/2, xname = "PIT", equidist = TRUE)
-  class(res) <- c("pit", "histogram")
-
-  if (is.list(plot)) do.call("plot", c(list(x = res), plot)) else res
-}
-
-pitPxPxm1 <- function (x, pdistr, ...)
-{
-  if (is.list(pdistr)) { # list of functions, not necessarily vectorized
-    stopifnot(length(pdistr) == length(x))
-    vapply(X = seq_along(x), FUN = function (i) {
-      stopifnot(isTRUE(
-        all.equal.numeric(0, pdistr[[i]](-1), check.attributes = FALSE)
-      ))
-      c(pdistr[[i]](x[i]), pdistr[[i]](x[i]-1))
-    }, FUN.VALUE = c(0,0), USE.NAMES = FALSE) # 2 x length(x)
-  } else { # pdistr is (the name of) a function
-    pdistr <- match.fun(pdistr)
-    if (nargs() == 2L) { # no dots, same pdistr for every data point
-      # and assumed to be vectorized
-      stopifnot(isTRUE(all.equal.numeric(0, pdistr(-1))))
-      rbind(pdistr(x),
-            pdistr(x-1),
-            deparse.level = 0)
-    } else { # ... arguments for pdistr, recycled to the length of x
-      # pdistr is called by mapply, so no need to be vectorized
-      stopifnot(isTRUE(all.equal.numeric(
-        0, do.call("pdistr", c(list(-1), lapply(list(...), "[", 1L))),
-        check.attributes = FALSE)))
-      rbind(mapply(pdistr, x, ..., SIMPLIFY = TRUE, USE.NAMES = FALSE),
-            mapply(pdistr, x-1, ..., SIMPLIFY = TRUE, USE.NAMES = FALSE),
-            deparse.level = 0)
-    }
-  }
-}
-
-
-## plot the PIT histogram
-#' @rdname pit
-#' @import graphics
-#' @export
-plot.pit <- function (x, main = "", ylab = NULL, ...)
-{
-  relative <- isTRUE(all.equal(1, sum(x$density)))
-  if (is.null(ylab))
-    ylab <- if (relative) "Relative Frequency" else "Density"
-  ## call plot.histogram
-  NextMethod("plot", main = main, ylab = ylab, ...)
-  ## add reference line
-  abline(h = if (relative) 1/length(x$mids) else 1, lty = 2, col = "grey")
-  invisible(x)
-}
-
-
-## a convenient wrapper for Poisson and NegBin predictions
+## a convenient wrapper for Poisson / NegBin / ZI-NegBin predictions
 .pit <- function (x, mu, size = NULL,gamma = NULL, ...)
 {
   if (is.null(size)) {
-    pit.default(x = x, pdistr = "ppois", lambda = mu, ...)
+    surveillance:::pit.default(x = x, pdistr = "ppois", lambda = mu, ...)
   } else if(is.null(gamma)){
-    pit.default(x = x, pdistr = "pnbinom", mu = mu, size = size, ...)
-  } else
-    pit.default(x = x, pdistr = VGAM::pzinegbin, munb = mu, size = size, pstr0 = gamma, ...)
-
+    surveillance:::pit.default(x = x, pdistr = "pnbinom", mu = mu, size = size, ...)
+  } else {
+    surveillance:::pit.default(x = x, pdistr = VGAM::pzinegbin, munb = mu, size = size, pstr0 = gamma, ...)
+  }
 }
 
 
 ## pit-methods for oneStepAhead() predictions and "hhh4" fits
 ## (similar to the scores-methods)
+#' @title Non-Randomized Version of the PIT Histogram (for Count Data)
 #' @rdname pit
+#' @importFrom surveillance pit
 #' @export
 pit.oneStepAhead_hhh4ZI <- function (x, units = NULL, ...)
 {
@@ -151,6 +62,7 @@ pit.oneStepAhead_hhh4ZI <- function (x, units = NULL, ...)
   }
 }
 #' @rdname pit
+#' @importFrom surveillance pit
 #' @export
 pit.hhh4ZI <- function (x, subset = x$control$subset, units = seq_len(x$nUnit), ...)
 {
