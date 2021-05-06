@@ -5,18 +5,17 @@
 ################################################################################
 
 ################################################################################
-### Copyright declaration from the surveillance package:
-### Part of the surveillance package, http://surveillance.r-forge.r-project.org
-### Free software under the terms of the GNU General Public License, version 2,
-### a copy of which is available at http://www.r-project.org/Licenses/.
-###
-### hhh4 is an extended version of algo.hhh for the sts-class
-### The function allows the incorporation of random effects and covariates.
+### Endemic-epidemic modelling for univariate or multivariate
+### time series of infectious disease counts (data class "sts")
 ###
 ### Copyright (C) 2010-2012 Michaela Paul, 2012-2016,2019-2021 Sebastian Meyer
-### $Revision$
-### $Date$
+###
+### This file is part of the R package "surveillance",
+### free software under the terms of the GNU General Public License, version 2,
+### a copy of which is available at https://www.R-project.org/Licenses/.
 ################################################################################
+
+## Error message issued in loglik, score and fisher functions upon NA parameters
 ADVICEONERROR <- "\n  Try different starting values, more iterations, or another optimizer.\n"
 
 #' @title Fitting zero-inflated HHH Models with Random Effects
@@ -314,7 +313,6 @@ hhh4ZI.sts <- function(stsObj,
   }
   #-------------------------------------------------------------------
   ## maximize loglikelihood (penalized and marginal)
-  ## maximize loglikelihood (penalized and marginal)
   myoptim <- fitHHH4ZI(theta=theta.start,sd.corr=Sigma.start, model=model,
                        cntrl.stop       = control$optimizer$stop,
                        cntrl.regression = control$optimizer$regression,
@@ -328,7 +326,7 @@ hhh4ZI.sts <- function(stsObj,
 
   # fitted value
   mu <- surveillance::meanHHH(thetahat, model, total.only=TRUE)
-  gamma <- gammaZero(thetahat, model, subset = model$subset, d = 0)
+  gamma <- gammaZero(thetahat, model)
   mean <- (1 - gamma) * mu
 
   if (dimRandomEffects>0) {
@@ -429,8 +427,10 @@ setControl <- function (control, stsObj)
     control[[comp]]$lag <- as.integer(control[[comp]]$lag)
   }
 
-  # chek lags in "zi" component, it can be a vector
-  if (!is.vector(control$zi$lag, mode = "numeric") & !is.null(control$zi$lag))
+  # check lags in "zi" component, it can be a vector
+  if (!is.null(control$zi$lag) && (
+      !is.vector(control$zi$lag, mode = "numeric") || any(control$zi$lag < 0)
+  ))
     stop("'control$zi$lag' must be a non-negative integer")
   control[["zi"]]$lag <- as.integer(control[["zi"]]$lag)
 
@@ -543,8 +543,6 @@ setControl <- function (control, stsObj)
     }
   } else {
     control$family <- match.arg(control$family, defaultControl$family)
-    if(!(control$family %in% c("NegBin1", "NegBinM")))
-      stop("control$family must be either NegBin1, NegBinM, or a factor")
   }
 
   if (!is.vector(control$subset, mode="numeric") ||
@@ -591,6 +589,8 @@ AR <- function(lag){
   rbind(matrix(NA_real_, lag, ncol(Y)),
         Y[seq_len(nrow(Y) - lag),, drop = FALSE])
 }
+
+
 # interpret and check the specifications of each component
 # control must contain all arguments, i.e. setControl was used
 interpretControl <- function (control, stsObj)
