@@ -29,6 +29,7 @@
 #' for model fits of class
 #' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 #' same as in \code{surveillance::update.hhh4}.
+#' @importFrom utils modifyList
 #' @export
 
 update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,

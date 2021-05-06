@@ -32,6 +32,7 @@ oneStepAhead.hhh4 <- surveillance::oneStepAhead
 formals(oneStepAhead.hhh4)$... <- substitute()  # consistent with the generic
 
 #' @rdname oneStepAhead
+#' @importFrom utils txtProgressBar setTxtProgressBar
 #' @export
 oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit)
                                 tp,     # scalar: one-step-ahead predictions for time

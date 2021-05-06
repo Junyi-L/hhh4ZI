@@ -46,6 +46,7 @@ plot.hhh4ZI <- function (x,
 ### Time series of fitted component means and observed counts for selected units
 ###
 #' @rdname plot.hhh4ZI
+#' @importFrom grDevices n2mfrow
 #' @export
 plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
                                col = c("grey85", "blue", "orange"),
@@ -253,6 +254,8 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
 ### Maps of the fitted mean components averaged over time
 ###
 #' @rdname plot.hhh4ZI
+#' @importFrom grDevices n2mfrow
+#' @import methods
 #' @export
 plotHHH4ZI_maps <- function (x,
                              which = c("mean", "endemic",
@@ -343,6 +346,8 @@ plotHHH4ZI_maps <- function (x,
 ### Map of estimated random intercepts of a specific component
 ###
 #' @rdname plot.hhh4ZI
+#' @importFrom grDevices cm.colors
+#' @import methods
 #' @export
 plotHHH4ZI_ri <- function (x, component, exp = FALSE,
                            at = list(n = 10), col.regions = cm.colors(100),
@@ -431,6 +436,7 @@ ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
 ### non-centered covariates and offsets.
 ###
 #' @rdname plot.hhh4ZI
+#' @importFrom grDevices n2mfrow
 #' @export
 plotHHH4ZI_season <- function (...,
                                components = NULL, intercept = FALSE,

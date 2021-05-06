@@ -254,6 +254,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' )
 #' summary(fit)
 #' sim_data <- simulate(fit, simplify = FALSE)
+#' @importFrom utils head tail
 #' @export
 hhh4ZI <- function (object, control, ...) UseMethod("hhh4ZI")
 
