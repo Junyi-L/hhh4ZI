@@ -590,6 +590,151 @@ AR <- function(lag){
         Y[seq_len(nrow(Y) - lag),, drop = FALSE])
 }
 
+# used to incorporate covariates and unit-specific effects
+fe <- function (x, unitSpecific = FALSE, which = NULL, initial = NULL)
+{
+  stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)
+  nTime <- nrow(stsObj)
+  nUnits <- ncol(stsObj)
+  if (!is.numeric(x)) {
+    stop("Covariate '", deparse(substitute(x)), "' is not numeric\n")
+  }
+  lengthX <- length(x)
+  if (lengthX == 1) {
+    terms <- matrix(x, nTime, nUnits, byrow = FALSE)
+    mult <- "*"
+  }
+  else if (lengthX == nTime) {
+    terms <- matrix(x, nTime, nUnits, byrow = FALSE)
+    mult <- "*"
+  }
+  else if (lengthX == nTime * nUnits) {
+    if (!is.matrix(x)) {
+      stop("Covariate '", deparse(substitute(x)), "' is not a matrix\n")
+    }
+    if ((ncol(x) != nUnits) | (nrow(x) != nTime)) {
+      stop("Dimension of covariate '", deparse(substitute(x)),
+           "' is not suitably specified\n")
+    }
+    terms <- x
+    mult <- "*"
+  }
+  else {
+    stop("Covariate '", deparse(substitute(x)), "' is not suitably specified\n")
+  }
+  intercept <- all(terms == 1)
+  unitSpecific <- unitSpecific || !is.null(which)
+  if (unitSpecific) {
+    if (is.null(which)) {
+      which <- rep.int(TRUE, nUnits)
+    }
+    else {
+      stopifnot(is.vector(which, mode = "logical"), length(which) ==
+                  nUnits)
+    }
+    terms[, !which] <- 0
+  }
+  dim.fe <- if (unitSpecific)
+    sum(which)
+  else 1
+  if (is.null(initial)) {
+    initial <- rep.int(0, dim.fe)
+  }
+  else if (length(initial) != dim.fe) {
+    stop("initial values for '", deparse(substitute(x)),
+         "' must be of length ", dim.fe)
+  }
+  summ <- if (unitSpecific)
+    "colSums"
+  else "sum"
+  name <- deparse(substitute(x))
+  if (unitSpecific)
+    name <- paste(name, colnames(stsObj)[which], sep = ".")
+  result <- list(terms = terms, name = name, Z.intercept = NULL,
+                 which = which, dim.fe = dim.fe, initial.fe = initial,
+                 dim.re = 0, dim.var = 0, initial.var = NULL, initial.re = NULL,
+                 intercept = intercept, unitSpecific = unitSpecific, random = FALSE,
+                 corr = FALSE, summ = summ, mult = mult)
+  return(result)
+}
+
+# random intercepts
+ri <- function (type = c("iid", "car"), corr = c("none", "all"), initial.fe = 0,
+                initial.var = -0.5, initial.re = NULL)
+{
+  stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)
+  if (ncol(stsObj) == 1)
+    stop("random intercepts require a multivariate 'stsObj'")
+  type <- match.arg(type)
+  corr <- match.arg(corr)
+  corr <- switch(corr, none = FALSE, all = TRUE)
+  if (type == "iid") {
+    Z <- 1
+    dim.re <- ncol(stsObj)
+    mult <- "*"
+  }
+  else if (type == "car") {
+    K <- neighbourhood(stsObj)
+    surveillance:::checkNeighbourhood(K)
+    K <- K == 1
+    ne <- colSums(K)
+    K <- -1 * K
+    diag(K) <- ne
+    dimK <- nrow(K)
+    if (qr(K)$rank != dimK - 1)
+      stop("neighbourhood matrix contains islands")
+    svdK <- svd(K)
+    L <- svdK$u[, -dimK] %*% diag(sqrt(svdK$d[-dimK]))
+    Z <- L %*% solve(t(L) %*% L)
+    dim.re <- dimK - 1L
+    mult <- "%*%"
+  }
+  stopifnot(length(initial.fe) == 1, length(initial.var) ==
+              1)
+  if (is.null(initial.re)) {
+    initial.re <- rnorm(dim.re, 0, sd = sqrt(0.001))
+  }
+  else if (length(initial.re) != dim.re) {
+    stop("'initial.re' must be of length ", dim.re)
+  }
+  result <- list(terms = 1, name = paste("ri(", type, ")",
+                                         sep = ""), Z.intercept = Z, which = NULL, dim.fe = 1,
+                 initial.fe = initial.fe, dim.re = dim.re, dim.var = 1,
+                 initial.var = initial.var, initial.re = initial.re, intercept = TRUE,
+                 unitSpecific = FALSE, random = TRUE, corr = corr, summ = "colSums",
+                 mult = mult)
+  return(result)
+}
+
+checkFormula <- function (f, component, data, stsObj)
+{
+  term <- terms.formula(f, specials = c("fe", "ri"))
+  intercept.all <- attr(term, "intercept") == 1
+  vars <- as.list(attr(term, "variables"))[-1]
+  nVars <- length(vars)
+  res <- if (intercept.all) {
+    c(fe(1), list(offsetComp = component))
+  }
+  else {
+    if (nVars == 0)
+      stop("formula ", deparse(substitute(f)), " contains no variables")
+    NULL
+  }
+  fe.raw <- setdiff(seq_len(nVars), unlist(attr(term, "specials")))
+  for (i in fe.raw) res <- cbind(res, c(eval(substitute(fe(x),
+                                                        list(x = vars[[i]])), envir = data), list(offsetComp = component)))
+  for (i in attr(term, "specials")$fe) res <- cbind(res, c(eval(vars[[i]],
+                                                                envir = data), list(offsetComp = component)))
+  res <- cbind(res, deparse.level = 0)
+  RI <- attr(term, "specials")$ri
+  if (sum(unlist(res["intercept", ])) + length(RI) > 1)
+    stop("There can only be one intercept in the formula ",
+         deparse(substitute(f)))
+  for (i in RI) res <- cbind(res, c(eval(vars[[i]], envir = data),
+                                    list(offsetComp = component)))
+  return(res)
+}
+
 
 # interpret and check the specifications of each component
 # control must contain all arguments, i.e. setControl was used
@@ -811,149 +956,6 @@ interpretControl <- function (control, stsObj)
   return(result)
 }
 
-# used to incorporate covariates and unit-specific effects
-fe <- function (x, unitSpecific = FALSE, which = NULL, initial = NULL)
-{
-  stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)
-  nTime <- nrow(stsObj)
-  nUnits <- ncol(stsObj)
-  if (!is.numeric(x)) {
-    stop("Covariate '", deparse(substitute(x)), "' is not numeric\n")
-  }
-  lengthX <- length(x)
-  if (lengthX == 1) {
-    terms <- matrix(x, nTime, nUnits, byrow = FALSE)
-    mult <- "*"
-  }
-  else if (lengthX == nTime) {
-    terms <- matrix(x, nTime, nUnits, byrow = FALSE)
-    mult <- "*"
-  }
-  else if (lengthX == nTime * nUnits) {
-    if (!is.matrix(x)) {
-      stop("Covariate '", deparse(substitute(x)), "' is not a matrix\n")
-    }
-    if ((ncol(x) != nUnits) | (nrow(x) != nTime)) {
-      stop("Dimension of covariate '", deparse(substitute(x)),
-           "' is not suitably specified\n")
-    }
-    terms <- x
-    mult <- "*"
-  }
-  else {
-    stop("Covariate '", deparse(substitute(x)), "' is not suitably specified\n")
-  }
-  intercept <- all(terms == 1)
-  unitSpecific <- unitSpecific || !is.null(which)
-  if (unitSpecific) {
-    if (is.null(which)) {
-      which <- rep.int(TRUE, nUnits)
-    }
-    else {
-      stopifnot(is.vector(which, mode = "logical"), length(which) ==
-                  nUnits)
-    }
-    terms[, !which] <- 0
-  }
-  dim.fe <- if (unitSpecific)
-    sum(which)
-  else 1
-  if (is.null(initial)) {
-    initial <- rep.int(0, dim.fe)
-  }
-  else if (length(initial) != dim.fe) {
-    stop("initial values for '", deparse(substitute(x)),
-         "' must be of length ", dim.fe)
-  }
-  summ <- if (unitSpecific)
-    "colSums"
-  else "sum"
-  name <- deparse(substitute(x))
-  if (unitSpecific)
-    name <- paste(name, colnames(stsObj)[which], sep = ".")
-  result <- list(terms = terms, name = name, Z.intercept = NULL,
-                 which = which, dim.fe = dim.fe, initial.fe = initial,
-                 dim.re = 0, dim.var = 0, initial.var = NULL, initial.re = NULL,
-                 intercept = intercept, unitSpecific = unitSpecific, random = FALSE,
-                 corr = FALSE, summ = summ, mult = mult)
-  return(result)
-}
-# random intercepts
-ri <- function (type = c("iid", "car"), corr = c("none", "all"), initial.fe = 0,
-                initial.var = -0.5, initial.re = NULL)
-{
-  stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)
-  if (ncol(stsObj) == 1)
-    stop("random intercepts require a multivariate 'stsObj'")
-  type <- match.arg(type)
-  corr <- match.arg(corr)
-  corr <- switch(corr, none = FALSE, all = TRUE)
-  if (type == "iid") {
-    Z <- 1
-    dim.re <- ncol(stsObj)
-    mult <- "*"
-  }
-  else if (type == "car") {
-    K <- neighbourhood(stsObj)
-    surveillance:::checkNeighbourhood(K)
-    K <- K == 1
-    ne <- colSums(K)
-    K <- -1 * K
-    diag(K) <- ne
-    dimK <- nrow(K)
-    if (qr(K)$rank != dimK - 1)
-      stop("neighbourhood matrix contains islands")
-    svdK <- svd(K)
-    L <- svdK$u[, -dimK] %*% diag(sqrt(svdK$d[-dimK]))
-    Z <- L %*% solve(t(L) %*% L)
-    dim.re <- dimK - 1L
-    mult <- "%*%"
-  }
-  stopifnot(length(initial.fe) == 1, length(initial.var) ==
-              1)
-  if (is.null(initial.re)) {
-    initial.re <- rnorm(dim.re, 0, sd = sqrt(0.001))
-  }
-  else if (length(initial.re) != dim.re) {
-    stop("'initial.re' must be of length ", dim.re)
-  }
-  result <- list(terms = 1, name = paste("ri(", type, ")",
-                                         sep = ""), Z.intercept = Z, which = NULL, dim.fe = 1,
-                 initial.fe = initial.fe, dim.re = dim.re, dim.var = 1,
-                 initial.var = initial.var, initial.re = initial.re, intercept = TRUE,
-                 unitSpecific = FALSE, random = TRUE, corr = corr, summ = "colSums",
-                 mult = mult)
-  return(result)
-}
-
-checkFormula <- function (f, component, data, stsObj)
-{
-  term <- terms.formula(f, specials = c("fe", "ri"))
-  intercept.all <- attr(term, "intercept") == 1
-  vars <- as.list(attr(term, "variables"))[-1]
-  nVars <- length(vars)
-  res <- if (intercept.all) {
-    c(fe(1), list(offsetComp = component))
-  }
-  else {
-    if (nVars == 0)
-      stop("formula ", deparse(substitute(f)), " contains no variables")
-    NULL
-  }
-  fe.raw <- setdiff(seq_len(nVars), unlist(attr(term, "specials")))
-  for (i in fe.raw) res <- cbind(res, c(eval(substitute(fe(x),
-                                                        list(x = vars[[i]])), envir = data), list(offsetComp = component)))
-  for (i in attr(term, "specials")$fe) res <- cbind(res, c(eval(vars[[i]],
-                                                                envir = data), list(offsetComp = component)))
-  res <- cbind(res, deparse.level = 0)
-  RI <- attr(term, "specials")$ri
-  if (sum(unlist(res["intercept", ])) + length(RI) > 1)
-    stop("There can only be one intercept in the formula ",
-         deparse(substitute(f)))
-  for (i in RI) res <- cbind(res, c(eval(vars[[i]], envir = data),
-                                    list(offsetComp = component)))
-  return(res)
-}
 gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
 {
   ## unpack theta
