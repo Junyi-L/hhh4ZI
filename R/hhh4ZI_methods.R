@@ -96,7 +96,7 @@ update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,
 
   ## fit the updated model or just return the modified control list
   if (evaluate) {
-    hhh4ZI(stsObj = object$stsObj, control = control)
+    hhh4ZI.sts(object$stsObj, control)
   } else {
     control
   }
