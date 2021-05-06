@@ -429,9 +429,9 @@ setControl <- function (control, stsObj)
 
   # check lags in "zi" component, it can be a vector
   if (!is.null(control$zi$lag) && (
-      !is.vector(control$zi$lag, mode = "numeric") || any(control$zi$lag < 0)
+      !is.vector(control$zi$lag, mode = "numeric") || any(control$zi$lag <= 0)
   ))
-    stop("'control$zi$lag' must be a non-negative integer")
+    stop("'control$zi$lag' must be a positive integer")
   control[["zi"]]$lag <- as.integer(control[["zi"]]$lag)
 
   ### check AutoRegressive component
