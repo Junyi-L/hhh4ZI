@@ -1945,22 +1945,13 @@ marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
 
   return(lmarg)
 }
+
+
 updateParams_nlminb <- surveillance:::updateParams_nlminb
 updateParams_nlm <- surveillance:::updateParams_nlm
-updateParams_optim <- function (start, ll, sc = NULL, fi = NULL, ..., control)
-{
-  ## Note: "fi" is not used in optim
-  method <- control[["method"]]; control$method <- NULL
-  lower <- control[["lower"]]; control$lower <- NULL
-  upper <- control[["upper"]]; control$upper <- NULL
-  res <- optim(start, ll, sc, ...,    # Note: control$fnscale is negative
-               method=method, lower=lower, upper=upper, control=control)
-  if (any(is.finite(c(lower, upper)))) surveillance:::checkParBounds(res$par, lower, upper)
-  ## Done
-  list(par=res$par, ll=res$value,
-       rel.tol= surveillance:::getRelDiff(res$par, start),
-       convergence=res$convergence, message=res$message)
-}
+updateParams_optim <- surveillance:::updateParams_optim
+
+
 ##------------------------------------------------------------------------
 ## fitHHH is the main workhorse where the iterative optimization is performed
 fitHHH4ZI <- function(theta, sd.corr, model,
@@ -2007,7 +1998,7 @@ fitHHH4ZI <- function(theta, sd.corr, model,
                                       lower=-5, upper=5, verbose=verbose)
   updateVariance <- function (sd.corr, theta, fisher.unpen)
     do.call(updateVarianceControl[[1]],
-            alist(sd.corr, marLogLik,
+            alist(sd.corr, marLogLik, NULL, NULL,
                   theta=theta, model=model,
                   fisher.unpen=fisher.unpen, verbose=verbose>1,
                   control=updateVarianceControl[[2]]))
