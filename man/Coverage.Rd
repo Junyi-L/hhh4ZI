@@ -3,9 +3,13 @@
 \docType{data}
 \name{Coverage}
 \alias{Coverage}
+\alias{TotalKids}
+\alias{VacPass}
+\alias{Dosis1}
+\alias{Dosis2}
 \title{MMR coverage levels in the 16 states of Germany}
 \format{
-Four \code{data.frame},
+Four data frames, each with 14 rows (years) and 16 columns (states):
 \itemize{
 \item{TotalKids} Number of children examined.
 \item{VacPass} Number of children who presented vaccination documents.
@@ -21,17 +25,31 @@ Records include information about the receipt of 1st and 2nd doses of MMR,
 from year 2005 to 2018. Note that information from children who did not
 present a vaccination document on the day of the medical examination,
 is not included in the estimated coverage.
+
+
+
+
+
+
+
+
 }
 \source{
 https://www.gbe-bund.de,
 Gesundheitsbericherstattung des Bundes; Queried on 23 February 2021.
 }
 \usage{
-data(Coverage)
+TotalKids
+
+VacPass
+
+Dosis1
+
+Dosis2
 }
 \description{
 Coverage levels at school entry for the first and second dose
-of the combined measles-mumps-rubella (MMR) vaccine in 2005 to 2018,
+of the combined measles-mumps-rubella (MMR) vaccine for the years 2005 to 2018,
 estimated from children presenting vaccination documents at school entry examinations.
 }
 \keyword{datasets}

@@ -1,29 +1,22 @@
 #' @title Measles in the 16 states of Germany
-#' @description Weekly number of measles cases in the 16 states (Bundeslaender) of Germany
-#' for years 2005 to 2018.
-#'
-#' @name measles
-#' @docType data
-#' @usage data(measles)
-#' @format An \code{sts} object containing \eqn{749\times 16}{749 x 16} observations starting
-#' from week 1 in 2005.The \code{population} slot contains the population fractions
+#' @description Bi-weekly number of measles cases in the 16 states (Bundeslaender) of Germany
+#' for the years 2005 to 2018.
+#' @details
+#' The \code{population} slot contains the population fractions
 #' of each state from 2005 to 2018, obtained from the Federal Statistical Office of Germany.
 #' @source SurvStat@RKI 2.0 (https://survstat.rki.de),
-#' Robert Koch Institute; Queried on 26 March 2021,
-#' statistisches Bundesamt (https://www.destatis.de/DE/Home/_inhalt.html);
+#' Robert Koch Institute; Queried on 26 March 2021.
+#'
+#' Statistisches Bundesamt (https://www.destatis.de/DE/Home/_inhalt.html);
 #' Queried on 10 April 2021.
-#' @keywords datasets
-NULL
+"measles"
 
 #' @title MMR coverage levels in the 16 states of Germany
 #' @description Coverage levels at school entry for the first and second dose
-#' of the combined measles-mumps-rubella (MMR) vaccine in 2005 to 2018,
+#' of the combined measles-mumps-rubella (MMR) vaccine for the years 2005 to 2018,
 #' estimated from children presenting vaccination documents at school entry examinations.
-#'
 #' @name Coverage
-#' @docType data
-#' @usage data(Coverage)
-#' @format Four \code{data.frame},
+#' @format Four data frames, each with 14 rows (years) and 16 columns (states):
 #' \itemize{
 #' \item{TotalKids} Number of children examined.
 #' \item{VacPass} Number of children who presented vaccination documents.
@@ -41,5 +34,20 @@ NULL
 #' is not included in the estimated coverage.
 #' @source https://www.gbe-bund.de,
 #' Gesundheitsbericherstattung des Bundes; Queried on 23 February 2021.
-#' @keywords datasets
 NULL
+
+#' @rdname Coverage
+#' @format
+"TotalKids"
+
+#' @rdname Coverage
+#' @format
+"VacPass"
+
+#' @rdname Coverage
+#' @format
+"Dosis1"
+
+#' @rdname Coverage
+#' @format
+"Dosis2"
