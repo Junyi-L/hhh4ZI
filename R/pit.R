@@ -97,6 +97,7 @@ pitPxPxm1 <- function (x, pdistr, ...)
 
 ## plot the PIT histogram
 #' @rdname pit
+#' @import graphics
 #' @export
 plot.pit <- function (x, main = "", ylab = NULL, ...)
 {

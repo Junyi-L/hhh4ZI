@@ -9,7 +9,7 @@
 \usage{
 \method{pit}{default}(x, pdistr, J = 10, relative = TRUE, ..., plot = list())
 
-plot.pit(x, main = "", ylab = NULL, ...)
+\method{plot}{pit}(x, main = "", ylab = NULL, ...)
 
 \method{pit}{oneStepAhead_hhh4ZI}(x, units = NULL, ...)
 

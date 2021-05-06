@@ -7,7 +7,7 @@ Maintainer: Junyi Lu <junyi.lu@fau.de>
 Description: Extending surveillance::hhh4() for zero-inflated infectious disease counts.
 License: GPL-2
 LazyData: true
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Depends: R (>= 3.6.0), surveillance
 Imports: VGAM
 Suggests: numDeriv, maxLik, gridExtra, scales

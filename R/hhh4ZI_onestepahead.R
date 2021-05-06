@@ -274,6 +274,7 @@ confint.oneStepAhead_hhh4ZI <- function (object, parm, level = 0.95, ...)
 
 #  plot of one-step-ahead forecasts
 #' @rdname oneStepAhead
+#' @import graphics
 #' @export
 plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
                                       start = NULL, ...)

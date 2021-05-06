@@ -10,7 +10,7 @@
 \alias{plotHHH4ZI_neweights}
 \title{lots for Fitted hhh4ZI-models}
 \usage{
-plot.hhh4ZI(x, type = c("fitted", "season", "maps", "ri", "neweights"), ...)
+\method{plot}{hhh4ZI}(x, type = c("fitted", "season", "maps", "ri", "neweights"), ...)
 
 plotHHH4ZI_fitted(
   x,
@@ -54,7 +54,7 @@ plotHHH4ZI_fitted1(
 
 plotHHH4ZI_maps(
   x,
-  which = c("mean", "endemic", "epi.own", "epi.neighbours", "gamma"),
+  which = c("mean", "endemic", "epi.own", "epi.neighbours", "zi"),
   prop = FALSE,
   main = which,
   zmax = NULL,

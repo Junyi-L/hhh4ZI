@@ -22,6 +22,7 @@
 #' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
 #' same as in \code{surveillance::plot.hhh4}, with one more component option for zero inflation part..
 #'
+#' @import graphics
 #' @export
 # no maxEV
 plot.hhh4ZI <- function (x,

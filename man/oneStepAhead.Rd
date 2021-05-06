@@ -35,7 +35,7 @@ oneStepAhead(result, tp, ...)
 
 \method{confint}{oneStepAhead_hhh4ZI}(object, parm, level = 0.95, ...)
 
-plot.oneStepAhead_hhh4ZI(x, unit = 1, probs = 1:99/100, start = NULL, ...)
+\method{plot}{oneStepAhead_hhh4ZI}(x, unit = 1, probs = 1:99/100, start = NULL, ...)
 }
 \description{
 The function oneStepAhead computes successive one-step-ahead
