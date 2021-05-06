@@ -1,14 +1,10 @@
 #' @title Refit a HHH4 model to a HHH4ZI model
 #' @export
 hhh4ZI.hhh4 <- function(object, # a HHH4 object
-                        control = list(f = ~-1,
-                                  lag = 1,
-                                  lag.unitSpecific = FALSE
-                        ),... # control list for zero model part
+                        control = list(f = ~1, lag = 1, lag.unitSpecific = FALSE),
+                        ... # further control elements
                         ){
   stopifnot(is.list(control))
-  # all_control <- object$control
-  # all_control$zi <- control
 
   ## use update.hhh4() to merge control arguments
   args <- if ("f" %in% names(control))  # zi control list
