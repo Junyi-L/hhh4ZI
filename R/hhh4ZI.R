@@ -251,7 +251,8 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' )
 #' summary(fit)
 #' sim_data <- simulate(fit, simplify = FALSE)
-#' @importFrom utils head tail
+#' @importFrom utils head tail getFromNamespace
+#' @importFrom surveillance observed neighbourhood clapply
 #' @export
 hhh4ZI <- function (object, control, ...) UseMethod("hhh4ZI")
 
@@ -598,7 +599,7 @@ componentsHHH4ZI <- function (object)
 
 AR <- function(lag){
   stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)
-  Y <- surveillance::observed(stsObj)
+  Y <- observed(stsObj)
   rbind(matrix(NA_real_, lag, ncol(Y)),
         Y[seq_len(nrow(Y) - lag),, drop = FALSE])
 }
@@ -906,7 +907,7 @@ ri <- function (type = c("iid", "car"), corr = c("none", "all"), initial.fe = 0,
   }
   else if (type == "car") {
     K <- neighbourhood(stsObj)
-    checkNeighbourhood(K)
+    surveillance:::checkNeighbourhood(K)
     K <- K == 1
     ne <- colSums(K)
     K <- -1 * K
@@ -1964,7 +1965,7 @@ updateParams_optim <- function (start, ll, sc = NULL, fi = NULL, ..., control)
   upper <- control[["upper"]]; control$upper <- NULL
   res <- optim(start, ll, sc, ...,    # Note: control$fnscale is negative
                method=method, lower=lower, upper=upper, control=control)
-  if (any(is.finite(c(lower, upper)))) checkParBounds(res$par, lower, upper)
+  if (any(is.finite(c(lower, upper)))) surveillance:::checkParBounds(res$par, lower, upper)
   ## Done
   list(par=res$par, ll=res$value,
        rel.tol= surveillance:::getRelDiff(res$par, start),
@@ -2129,28 +2130,12 @@ checkAnalyticals <- function (model,
   cat("\nPenalized log-likelihood:\n")
   resCheckPen <- sapply(methods, function(derivMethod) {
     if (requireNamespace(derivMethod)) {
-      do.call(paste("checkDerivatives", derivMethod, sep="."),
+      do.call(getFromNamespace(paste("checkDerivatives", derivMethod, sep="."), "surveillance"),
               args=alist(penLogLik, penScore, penFisher, theta,
                          sd.corr=sd.corr, model=model))
     }
   }, simplify=FALSE, USE.NAMES=TRUE)
   if (length(resCheckPen) == 1L) resCheckPen <- resCheckPen[[1L]]
 
-  resCheckMar <- if (length(sd.corr) == 0L) list() else {
-    cat("\nMarginal log-likelihood:\n")
-    fisher.unpen <- attr(penFisher(theta, sd.corr, model, attributes=TRUE),
-                         "fisher")
-    resCheckMar <- sapply(methods, function(derivMethod) {
-      if (requireNamespace(derivMethod)) {
-        do.call(paste("checkDerivatives", derivMethod, sep="."),
-                args=alist(marLogLik, marScore, marFisher, sd.corr,
-                           theta=theta, model=model, fisher.unpen=fisher.unpen))
-      }
-    }, simplify=FALSE, USE.NAMES=TRUE)
-    if (length(resCheckMar) == 1L) resCheckMar[[1L]] else resCheckMar
-  }
-
-  list(pen = resCheckPen, mar = resCheckMar)
+  resCheckPen
 }
-checkDerivatives.numDeriv <- surveillance:::checkDerivatives.numDeriv
-checkDerivatives.maxLik <- surveillance:::checkDerivatives.maxLik

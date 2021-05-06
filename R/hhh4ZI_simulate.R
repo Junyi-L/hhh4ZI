@@ -88,7 +88,7 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
     psi <- psi[model$indexPsi]
 
   ## weight matrix/array of the ne component
-  neweights <- getNEweights(object, coefW(theta))
+  neweights <- surveillance::getNEweights(object, surveillance::coefW(theta))
 
   ## set predictor to zero if not included ('components' argument)
   stopifnot(length(components) > 0, components %in% c("ar", "ne", "end"))

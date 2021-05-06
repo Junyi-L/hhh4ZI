@@ -297,7 +297,7 @@ plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
   ## produce fanplot
   if (is.null(start))
     start <- as.integer(rownames(qs)[1L])
-  fanplot(quantiles = qs, probs = probs, means = ms,
+  surveillance::fanplot(quantiles = qs, probs = probs, means = ms,
           observed = obs, start = start, ...)
 }
 
