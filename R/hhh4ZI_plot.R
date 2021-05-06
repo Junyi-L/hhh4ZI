@@ -255,6 +255,7 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
 ###
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices n2mfrow
+#' @importFrom sp spplot
 #' @import methods
 #' @export
 plotHHH4ZI_maps <- function (x,
@@ -347,6 +348,7 @@ plotHHH4ZI_maps <- function (x,
 ###
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices cm.colors
+#' @importFrom sp spplot
 #' @import methods
 #' @export
 plotHHH4ZI_ri <- function (x, component, exp = FALSE,

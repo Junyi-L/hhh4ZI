@@ -8,6 +8,7 @@ Description: Extending surveillance::hhh4() for zero-inflated infectious disease
 License: GPL-2
 LazyData: true
 RoxygenNote: 7.1.1
-Depends: R (>= 3.6.0), methods, surveillance
-Imports: VGAM
+Depends: R (>= 3.6.0), methods, grDevices, graphics, stats, utils,
+    surveillance
+Imports: sp, VGAM
 Suggests: numDeriv, maxLik, gridExtra, scales
