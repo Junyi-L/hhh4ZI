@@ -111,7 +111,6 @@ plot.pit <- function (x, main = "", ylab = NULL, ...)
 
 
 ## a convenient wrapper for Poisson and NegBin predictions
-pzinegbin <- VGAM::pzinegbin
 .pit <- function (x, mu, size = NULL,gamma = NULL, ...)
 {
   if (is.null(size)) {
@@ -119,7 +118,7 @@ pzinegbin <- VGAM::pzinegbin
   } else if(is.null(gamma)){
     pit.default(x = x, pdistr = "pnbinom", mu = mu, size = size, ...)
   } else
-    pit.default(x = x, pdistr = "pzinegbin", munb = mu, size = size, pstr0 = gamma, ...)
+    pit.default(x = x, pdistr = VGAM::pzinegbin, munb = mu, size = size, pstr0 = gamma, ...)
 
 }
 
