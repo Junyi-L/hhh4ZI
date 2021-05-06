@@ -91,7 +91,7 @@ list with the following components:
 \itemize{
 \item{f = ~ -1}{
 a formula specifying
-\eqn{\logit(\gamma_{it})}{logit(\gamma_it)}.}
+\eqn{logit(\gamma_{it})}{logit(gamma_it)}.}
 \item{lag = 1}{
 a positive integer or vector meaning autoregression on
 \eqn{y_{i,t-lag}}}
