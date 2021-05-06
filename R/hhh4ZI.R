@@ -271,7 +271,7 @@ hhh4ZI.sts <- function(stsObj,
                                    normalize = FALSE), # w_ji -> w_ji / rowSums(w_ji), after scaling
                          end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
                                     offset = 1),    # optional multiplicative offset e_it
-                         zi = list(f = ~-1,
+                         zi = list(f = ~ 1,
                                    lag = 1,
                                    lag.unitSpecific = FALSE# can be a scalar or vector
                          ),
