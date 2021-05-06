@@ -1947,11 +1947,6 @@ marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
 }
 
 
-updateParams_nlminb <- surveillance:::updateParams_nlminb
-updateParams_nlm <- surveillance:::updateParams_nlm
-updateParams_optim <- surveillance:::updateParams_optim
-
-
 ##------------------------------------------------------------------------
 ## fitHHH is the main workhorse where the iterative optimization is performed
 fitHHH4ZI <- function(theta, sd.corr, model,
@@ -1986,7 +1981,7 @@ fitHHH4ZI <- function(theta, sd.corr, model,
                                         iter.max=if(dimRE==0) 100,
                                         verbose=verbose+(dimRE==0))
   updateRegression <- function (theta, sd.corr)
-    do.call(updateRegressionControl[[1]],
+    do.call(getFromNamespace(updateRegressionControl[[1]], "surveillance"),
             alist(theta, penLogLik, penScore, penFisher,
                   sd.corr=sd.corr, model=model,
                   control=updateRegressionControl[[2]]))
@@ -1997,7 +1992,7 @@ fitHHH4ZI <- function(theta, sd.corr, model,
   updateVarianceControl <- getUpdater(cntrl.variance, sd.corr,
                                       lower=-5, upper=5, verbose=verbose)
   updateVariance <- function (sd.corr, theta, fisher.unpen)
-    do.call(updateVarianceControl[[1]],
+    do.call(getFromNamespace(updateVarianceControl[[1]], "surveillance"),
             alist(sd.corr, marLogLik, NULL, NULL,
                   theta=theta, model=model,
                   fisher.unpen=fisher.unpen, verbose=verbose>1,
