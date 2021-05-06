@@ -240,6 +240,7 @@ psi2size.oneStepAhead <- surveillance:::psi2size.oneStepAhead
 
 # Quantiles of the one-step-ahead forecasts
 #' @rdname oneStepAhead
+#' @import stats
 #' @export
 quantile.oneStepAhead_hhh4ZI <- function (x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)
 {
