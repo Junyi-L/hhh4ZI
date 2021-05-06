@@ -287,7 +287,8 @@ hhh4ZI.sts <- function(stsObj,
                                       sd.corr = NULL),
                          data = list(t = stsObj@epoch - min(stsObj@epoch)), # named list of covariates
                          keep.terms = FALSE  # whether to keep interpretControl(control, stsObj)
-                       ), check.analyticals = FALSE
+                       ), check.analyticals = FALSE,
+                       ... # unused (argument of the generic)
 ){
   ptm <- proc.time()
   ## check control and set default values (for missing arguments)

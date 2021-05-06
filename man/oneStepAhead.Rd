@@ -18,7 +18,8 @@ oneStepAhead(result, tp, ...)
   which.start = c("current", "final"),
   keep.estimates = FALSE,
   verbose = TRUE,
-  cores = 1
+  cores = 1,
+  ...
 )
 
 \method{oneStepAhead}{hhh4ZI}(
@@ -28,7 +29,8 @@ oneStepAhead(result, tp, ...)
   which.start = c("current", "final"),
   keep.estimates = FALSE,
   verbose = TRUE,
-  cores = 1
+  cores = 1,
+  ...
 )
 
 \method{quantile}{oneStepAhead_hhh4ZI}(x, probs = c(2.5, 10, 50, 90, 97.5)/100, ...)

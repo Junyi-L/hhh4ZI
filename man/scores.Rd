@@ -7,7 +7,6 @@
 \alias{dss}
 \alias{rps}
 \alias{scores}
-\alias{scores.default}
 \alias{scores.oneStepAhead_hhh4ZI}
 \alias{scores.hhh4ZI}
 \title{Proper Scoring Rules for Poisson, Negative Binomial
@@ -28,18 +27,6 @@ rps(
   gamma = NULL,
   k = 40,
   tolerance = sqrt(.Machine$double.eps)
-)
-
-scores(result, tp, ...)
-
-\method{scores}{default}(
-  x,
-  mu,
-  size = NULL,
-  gamma = NULL,
-  which = c("logs", "rps", "dss", "ses"),
-  sign = FALSE,
-  ...
 )
 
 \method{scores}{oneStepAhead_hhh4ZI}(

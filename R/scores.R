@@ -173,12 +173,11 @@ rps <- function (x, mu, size=NULL, gamma = NULL, k=40, tolerance=sqrt(.Machine$d
 #' are the same as in \code{surveillance::update.hhh4},
 #' for zero-inflated negative binomial predictions the zero inflation parameter
 #' \code{gamma} is needed.
-#' @export
-scores <- function (result, tp, ...) UseMethod("scores")
+#' @name scores
+NULL
 
-#' @rdname scores
-#' @export
-scores.default <- function(x, mu, size = NULL, gamma = NULL,
+## adapted from surveillance:::scores.default()
+.scores <- function(x, mu, size = NULL, gamma = NULL,
                            which = c("logs", "rps", "dss", "ses"),
                            sign = FALSE, ...)
 {
@@ -199,6 +198,7 @@ scores.default <- function(x, mu, size = NULL, gamma = NULL,
 
 ### apply scoring rules to a set of oneStepAhead() forecasts
 #' @rdname scores
+#' @importFrom surveillance scores
 #' @export
 scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
                                  units = NULL, sign = FALSE, individual = FALSE,
@@ -220,7 +220,7 @@ scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
   if (nUnits == 1L)
     individual <- TRUE  # no need to apply rowMeans() below
 
-  result <- scores.default(x = y, mu = mu, size = size, gamma = gamma,
+  result <- .scores(x = y, mu = mu, size = size, gamma = gamma,
                            which = which, sign = sign)
 
   ## reverse order of the time points (historically)
@@ -240,6 +240,7 @@ scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
 
 ## calculate scores with respect to fitted values
 #' @rdname scores
+#' @importFrom surveillance scores
 #' @export
 scores.hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
                          subset = x$control$subset, units = seq_len(x$nUnit),
@@ -251,7 +252,7 @@ scores.hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
   ##scores.oneStepAhead(fitted, which = which, units = units, sign = sign,
   ##                    individual = TRUE, reverse = FALSE)
 
-  result <- scores.default(
+  result <- .scores(
     x = x$stsObj@observed[subset, units, drop = FALSE],
     mu = x$mu[match(subset, x$control$subset), units, drop = FALSE],
     gamma = x$gamma[match(subset, x$control$subset), units, drop = FALSE],

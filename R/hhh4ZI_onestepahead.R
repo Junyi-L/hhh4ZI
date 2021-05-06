@@ -29,6 +29,7 @@ oneStepAhead <- function (result, tp, ...) UseMethod("oneStepAhead")
 #' @rdname oneStepAhead
 #' @export
 oneStepAhead.hhh4 <- surveillance::oneStepAhead
+formals(oneStepAhead.hhh4)$... <- substitute()  # consistent with the generic
 
 #' @rdname oneStepAhead
 #' @export
@@ -40,9 +41,11 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
                                 keep.estimates = FALSE,
                                 verbose = TRUE, # verbose-1 is used as verbose setting
                                 # for sequentially refitted hhh4 models
-                                cores = 1) # if which.start="final", the predictions
-  # can be computed in parallel
+                                cores = 1, # if which.start="final", the predictions
+                                           # can be computed in parallel
+                                ...)
 {
+  chkDots(...)  # there shouldn't be any
   stopifnot(inherits(result, "hhh4ZI"))
   type <- match.arg(type)
   if (type == "rolling" && !is.list(which.start)) {

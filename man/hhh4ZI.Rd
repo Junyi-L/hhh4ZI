@@ -18,7 +18,8 @@ hhh4ZI(object, control, ...)
     variance = list(method = "Nelder-Mead")), verbose = FALSE, start = list(fixed = NULL,
     random = NULL, sd.corr = NULL),      data = list(t = stsObj@epoch -
     min(stsObj@epoch)), keep.terms = FALSE),
-  check.analyticals = FALSE
+  check.analyticals = FALSE,
+  ...
 )
 }
 \arguments{
