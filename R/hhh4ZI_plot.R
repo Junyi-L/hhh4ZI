@@ -177,10 +177,10 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
   ## get fitted component means
   if (is.null(meanHHH)) {
     meanHHH <- if (is.null(decompose)) {
-      mean_HHH <- surveillance:::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
+      mean_HHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
       lapply(mean_HHH[1:5],"*", 1 - gamma)
     } else {
-      mean_HHH <- surveillance:::decompose.hhh4(x)
+      mean_HHH <- surveillance::decompose.hhh4(x)
       x2 <- array(dim = dim(mean_HHH), dimnames = dimnames(mean_HHH))
       for (i in 1 : (dim(mean_HHH)[3]))
         x2[,,i] <- mean_HHH[,,i] * (1-gamma)
@@ -268,7 +268,7 @@ plotHHH4ZI_maps <- function (x,
     ## extract district-specific mean components
   if (is.null(meanHHH)) {
     gamma <- x$gamma
-    meanHHH <- surveillance:::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
+    meanHHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
     meanHHH <- lapply(meanHHH[1:5],"*", 1 - gamma)
   }
 

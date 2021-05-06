@@ -305,7 +305,7 @@ hhh4ZI.sts <- function(stsObj,
 
   # check if initial values are valid
   # CAVE: there might be NA's in mu if there are missing values in Y
-  mu <- surveillance:::meanHHH(theta.start, model, total.only=TRUE)
+  mu <- surveillance::meanHHH(theta.start, model, total.only=TRUE)
   if(any(mu==0, na.rm=TRUE) || any(is.infinite(mu)))
     stop("some mean is degenerate (0 or Inf) at initial values")
 
@@ -339,7 +339,7 @@ hhh4ZI.sts <- function(stsObj,
   thetahat <- myoptim$theta
 
   # fitted value
-  mu <- surveillance:::meanHHH(thetahat, model, total.only=TRUE)
+  mu <- surveillance::meanHHH(thetahat, model, total.only=TRUE)
   gamma <- gammaZero(thetahat, model, subset = model$subset, d = 0)
   mean <- (1 - gamma) * mu
 
@@ -1045,7 +1045,7 @@ penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALS
   ############################################################
 
   ## evaluate dispersion
-  psi <- surveillance:::sizeHHH(theta, model,
+  psi <- surveillance::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
 
   #psi might be numerically equal to 0 or Inf in which cases dnbinom (in meanHHH)
@@ -1058,7 +1058,7 @@ penLogLik <- function(theta, sd.corr, model, attributes=FALSE, individual = FALS
   if (any(psi == 0)) return(-Inf)
 
   ## evaluate mean
-  mu <- surveillance:::meanHHH(theta, model, total.only=TRUE)
+  mu <- surveillance::meanHHH(theta, model, total.only=TRUE)
   # if, numerically, mu=Inf, log(dnbinom) or log(dpois) both equal -Inf, hence:
   #if (any(is.infinite(mu))) return(-Inf)
   # however, since mu=Inf does not produce warnings below and this is a rare
@@ -1119,11 +1119,11 @@ penScore <- function(theta, sd.corr, model, individual = FALSE)
   }
 
   ## evaluate dispersion
-  psi <- surveillance:::sizeHHH(theta, model,
+  psi <- surveillance::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
 
   ## evaluate mean
-  mu <- surveillance:::meanHHH(theta, model)
+  mu <- surveillance::meanHHH(theta, model)
   meanTotal <- mu$mean
 
   ## evaluate gamma
@@ -1320,11 +1320,11 @@ penFisher <- function(theta, sd.corr, model, attributes=FALSE)
   }
 
   ## evaluate dispersion
-  psi <- surveillance:::sizeHHH(theta, model,
+  psi <- surveillance::sizeHHH(theta, model,
                                 subset = if (dimPsi > 1L) subset) # else scalar or NULL
 
   ## evaluate mean
-  mu <- surveillance:::meanHHH(theta, model)
+  mu <- surveillance::meanHHH(theta, model)
   meanTotal <- mu$mean
 
   # evaluate individual score

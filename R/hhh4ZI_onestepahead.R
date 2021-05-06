@@ -120,7 +120,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
   ## extract predictions and stuff for specific tp from fit
   getPreds <- function (fit, tp) {
     coefs <- unname(fit$coefficients)
-    mu <- surveillance:::meanHHH(coefs, fit$terms, subset=tp+1L, total.only=TRUE)
+    mu <- surveillance::meanHHH(coefs, fit$terms, subset=tp+1L, total.only=TRUE)
     gamma <- gammaZero(coefs, fit$terms, subset=tp+1L, d = 0)
     mean <- (1 - gamma) * mu
 
