@@ -25,11 +25,11 @@
 .pit <- function (x, mu, size = NULL,gamma = NULL, ...)
 {
   if (is.null(size)) {
-    surveillance:::pit.default(x = x, pdistr = "ppois", lambda = mu, ...)
+    surveillance::pit.default(x = x, pdistr = "ppois", lambda = mu, ...)
   } else if(is.null(gamma)){
-    surveillance:::pit.default(x = x, pdistr = "pnbinom", mu = mu, size = size, ...)
+    surveillance::pit.default(x = x, pdistr = "pnbinom", mu = mu, size = size, ...)
   } else {
-    surveillance:::pit.default(x = x, pdistr = VGAM::pzinegbin, munb = mu, size = size, pstr0 = gamma, ...)
+    surveillance::pit.default(x = x, pdistr = VGAM::pzinegbin, munb = mu, size = size, pstr0 = gamma, ...)
   }
 }
 
