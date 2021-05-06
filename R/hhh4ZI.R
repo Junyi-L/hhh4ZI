@@ -101,7 +101,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' \eqn{logit(\gamma_{it})}{logit(gamma_it)}.}
 #' \item{lag = 1}{
 #' a positive integer or vector meaning autoregression on
-#' \eqn{y_{i,t-lag}}}
+#' \eqn{y_{i,t-lag}}. Set to \code{NULL} to exclude AR terms.}
 #' \item{lag.unitSpecific}{ logical indicating if the autoregressive parameter
 #' in the zero inflation part is unit specific. }
 #' }
@@ -259,7 +259,7 @@ hhh4ZI.sts <- function(stsObj,
                          end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
                                     offset = 1),    # optional multiplicative offset e_it
                          zi = list(f = ~ 1,
-                                   lag = 1,
+                                   lag = 1,         # NULL excludes AR effects
                                    lag.unitSpecific = FALSE# can be a scalar or vector
                          ),
                          family = c("NegBin1", "NegBinM"), # or a factor of length nUnit for Negbin

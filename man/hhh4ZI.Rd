@@ -94,7 +94,7 @@ a formula specifying
 \eqn{logit(\gamma_{it})}{logit(gamma_it)}.}
 \item{lag = 1}{
 a positive integer or vector meaning autoregression on
-\eqn{y_{i,t-lag}}}
+\eqn{y_{i,t-lag}}. Set to \code{NULL} to exclude AR terms.}
 \item{lag.unitSpecific}{ logical indicating if the autoregressive parameter
 in the zero inflation part is unit specific. }
 }
