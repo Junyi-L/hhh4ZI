@@ -224,7 +224,6 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #'   \code{"proc_time"}}
 #' }
 #' @examples
-#' measles <- aggregate(measles, by = "time", nfreq = 26)
 #' adjmat <- neighbourhood(measles) == 1
 #' neW1 <- adjmat/colSums(adjmat)  # FIXME @ Junyi: why normalize columns?
 #' fit <- hhh4ZI(measles,
