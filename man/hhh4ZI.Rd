@@ -233,27 +233,15 @@ The inflated parameter is a logit-linear predictor and can have autoregressive t
 adjmat <- neighbourhood(measles) == 1
 neW1 <- adjmat/colSums(adjmat)  # FIXME @ Junyi: why normalize columns?
 fit <- hhh4ZI(measles,
-control = list(
-  ar = list(f = ~1,
-            offset = 1,
-            lag = 1),
-  ne = list(f = ~1,
-            offset = 1,
-            lag = 1,
-           weights = neW1,
-           scale = NULL,
-           normalize = TRUE),
- end = list(f = ~1,
-             offset = 1),
-  zi = list(f = ~1,
-            lag = 1
- ),
-  family = "NegBin1",
-  optimizer = list(stop = list(tol = 1e-5, niter = 100),
-                   regression = list(method = "nlminb")),
-  verbose = TRUE,
-  keep.terms = TRUE
-)
+  control = list(
+    ar = list(f = ~1),
+    ne = list(f = ~1, weights = neW1, normalize = TRUE),
+   end = list(f = ~1),
+    zi = list(f = ~1),
+    family = "NegBin1",
+    verbose = TRUE,
+    keep.terms = TRUE
+  )
 )
 summary(fit)
 sim_data <- simulate(fit, simplify = FALSE)
