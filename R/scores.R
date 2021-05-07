@@ -15,11 +15,7 @@
 ### Biometrics 65:1254-1261
 ###
 ### Copyright (C) 2010-2012 Michaela Paul, 2014-2015,2017-2019 Sebastian Meyer
-### $Revision$
-### $Date$
 ################################################################################
-
-
 
 
 ## logarithmic score
@@ -28,9 +24,6 @@
 .logs <- function (px)
   -log(px)
 
-
-#' @rdname scores
-#' @export
 logs <- function (x, mu, size=NULL, gamma = NULL) {
   if (is.null(size)) {
     - dpois(x, lambda=mu, log=TRUE)
@@ -44,8 +37,7 @@ logs <- function (x, mu, size=NULL, gamma = NULL) {
 
 ## squared error score
 ## ses(P,x) = (x-mu_p)^2
-#' @rdname scores
-#' @export
+
 ses <- function (x, mu, size=NULL, gamma = NULL) {
   if(is.null(gamma)) (x-mu)^2 else
     (x- (1 - gamma) * mu)^2
@@ -54,8 +46,7 @@ ses <- function (x, mu, size=NULL, gamma = NULL) {
 
 ## normalized squared error score (IMPROPER)
 ## nses(P,x) = ((x-mu_p)/sigma_p)^2
-#' @rdname scores
-#' @export
+
 nses <- function (x, mu, size=NULL, gamma = NULL) {
   sigma2 <- if (is.null(size)) mu else
     if(is.null(gamma)) mu * (1 + mu/size) else
@@ -71,8 +62,6 @@ nses <- function (x, mu, size=NULL, gamma = NULL) {
 .dss <- function (meanP, varP, x)
   (x-meanP)^2 / varP + log(varP)
 
-#' @rdname scores
-#' @export
 dss <- function (x, mu, size=NULL, gamma = NULL)
   .dss(meanP = if(is.null(gamma)) mu else (1 - gamma) * mu,
        varP = if (is.null(size)) mu else
@@ -138,8 +127,6 @@ rps_1ZINB <- function (x, mu, size, gamma,
 }
 
 ## vectorized version
-#' @rdname scores
-#' @export
 rps <- function (x, mu, size=NULL, gamma = NULL, k=40, tolerance=sqrt(.Machine$double.eps)) {
   res <- if (is.null(size)) {
     mapply(rps_1P, x=x, mu=mu,
@@ -161,7 +148,7 @@ rps <- function (x, mu, size=NULL, gamma = NULL, k=40, tolerance=sqrt(.Machine$d
 
 ### apply a set of scoring rules at once
 #' @title Proper Scoring Rules for Poisson, Negative Binomial
-#' or Zero-inflated Negative Binomial Predictions.
+#' or Zero-inflated Negative Binomial Predictions
 #' @description The following scores are implemented:
 #' logarithmic score (logs), ranked probability score (rps),
 #' Dawid-Sebastiani score (dss), squared error score (ses).
