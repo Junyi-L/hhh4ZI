@@ -100,8 +100,8 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' a formula specifying
 #' \eqn{logit(\gamma_{it})}{logit(gamma_it)}.}
 #' \item{lag = 1}{
-#' a positive integer or vector meaning autoregression on
-#' \eqn{y_{i,t-lag}}. Set to \code{NULL} to exclude AR terms.}
+#' a vector of positive integers meaning autoregression on the respective
+#' \eqn{y_{i,t-lag}} terms. Use \code{NULL} or \code{integer(0)} to exclude AR terms.}
 #' \item{lag.unitSpecific}{ logical indicating if the autoregressive parameter
 #' in the zero inflation part is unit specific. }
 #' }
@@ -259,8 +259,8 @@ hhh4ZI.sts <- function(stsObj,
                          end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
                                     offset = 1),    # optional multiplicative offset e_it
                          zi = list(f = ~ 1,
-                                   lag = 1,         # NULL excludes AR effects
-                                   lag.unitSpecific = FALSE# can be a scalar or vector
+                                   lag = 1,         # an (empty) integer vector or NULL
+                                   lag.unitSpecific = FALSE
                          ),
                          family = c("NegBin1", "NegBinM"), # or a factor of length nUnit for Negbin
                          subset = 2:nrow(stsObj),   # epidemic components require Y_{t-lag}
@@ -427,12 +427,12 @@ setControl <- function (control, stsObj)
     control[[comp]]$lag <- as.integer(control[[comp]]$lag)
   }
 
-  # check lags in "zi" component, it can be a vector
-  if (!is.null(control$zi$lag) && (
+  # check lags in "zi" component: NULL or an integer vector, possibly empty
+  if (!is.null(control$zi[["lag"]]) && ( # avoid pmatch-ing lag.unitSpecific
       !is.vector(control$zi$lag, mode = "numeric") || any(control$zi$lag <= 0)
   ))
-    stop("'control$zi$lag' must be a positive integer")
-  control[["zi"]]$lag <- as.integer(control[["zi"]]$lag)
+    stop("'control$zi$lag' must be a vector of positive integers, possibly empty")
+  control[["zi"]][["lag"]] <- as.integer(control[["zi"]][["lag"]])  # NULL -> integer(0)
 
   ### check AutoRegressive component
 
@@ -660,7 +660,7 @@ interpretControl <- function (control, stsObj)
                       surveillance:::checkFormula(end$f,3, control$data, stsObj))
 
   if(zi$inModel) {
-  zi.formula <- if(!is.null(zi$lag)){
+  zi.formula <- if(length(zi[["lag"]]) > 0){
     update.formula(zi$f,
                    as.formula(paste("~ . +",
                                     paste0("fe(AR(", zi$lag, ")",
