@@ -285,7 +285,7 @@ plotHHH4ZI_maps <- function (x,
 
   ## convert to proportions
   if (prop) {
-    meanHHH[,,-1L] <- meanHHH[,,-1L,drop=FALSE] / c(meanHHH[,,1L])
+    meanHHH[,,-c(1L, 5L)] <- meanHHH[,,-c(1L, 5L),drop=FALSE] / c(meanHHH[,,1L])
   }
 
   ## select only 'which' components
