@@ -223,8 +223,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #'   \code{"proc_time"}}
 #' }
 #' @examples
-#' adjmat <- neighbourhood(measles) == 1
-#' neW1 <- adjmat/colSums(adjmat)  # FIXME @ Junyi: why normalize columns?
+#' neW1 <- neighbourhood(measles) == 1
 #' fit <- hhh4ZI(measles,
 #'   control = list(
 #'     ar = list(f = ~1),
