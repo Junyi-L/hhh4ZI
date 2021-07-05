@@ -47,7 +47,7 @@ update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,
   } else local({ # re-use previous 'start' specification
     ## for pre-1.8-2 "hhh4" objects,
     ## object$control$start is not necessarily a complete list:
-    template <- eval(formals(hhh4ZI)$control$start)
+    template <- eval(formals(hhh4ZI.sts)$control$start)
     template[] <- object$control$start[names(template)]
     template
   })
