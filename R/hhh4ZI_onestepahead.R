@@ -196,9 +196,10 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
         if (!fit$convergence) {
           if (do_pb) cat("\n")
           cat("WARNING: No convergence @ t =", tps[i], "!\n")
+          cat("WARNING: Last fit is used\n")
           ## FIXME: do a grid search ?
           fit <- fit.old
-          next
+          #next
         }
       }
 
