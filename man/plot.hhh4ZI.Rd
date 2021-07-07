@@ -93,7 +93,8 @@ plotHHH4ZI_season(
   legend = NULL,
   legend.args = list(),
   refline.args = list(),
-  unit = 1
+  unit = 1,
+  period = NULL
 )
 
 plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)

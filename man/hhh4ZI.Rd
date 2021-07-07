@@ -230,8 +230,7 @@ decomposition of the conditional mean into \emph{epidemic} and
 The inflated parameter is a logit-linear predictor and can have autoregressive terms.
 }
 \examples{
-adjmat <- neighbourhood(measles) == 1
-neW1 <- adjmat/colSums(adjmat)  # FIXME @ Junyi: why normalize columns?
+neW1 <- neighbourhood(measles) == 1
 fit <- hhh4ZI(measles,
   control = list(
     ar = list(f = ~1),
