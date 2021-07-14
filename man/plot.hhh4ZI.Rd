@@ -10,7 +10,7 @@
 \alias{plotHHH4ZI_neweights}
 \title{lots for Fitted hhh4ZI-models}
 \usage{
-\method{plot}{hhh4ZI}(x, type = c("fitted", "season", "maps", "ri", "neweights"), ...)
+\method{plot}{hhh4ZI}(x, type = c("fitted", "maxEV", "season", "maps", "ri", "neweights"), ...)
 
 plotHHH4ZI_fitted(
   x,

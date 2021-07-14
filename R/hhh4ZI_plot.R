@@ -25,7 +25,7 @@
 #' @export
 # no maxEV
 plot.hhh4ZI <- function (x,
-                         type = c("fitted", "season", "maps", "ri", "neweights"),
+                         type = c("fitted", "maxEV", "season", "maps", "ri", "neweights"),
                          ...)
 {
   stopifnot(x$convergence)
@@ -341,6 +341,125 @@ plotHHH4ZI_maps <- function (x,
   }
 }
 
+
+###
+### Plot the course of the dominant eigenvalue of one or several hhh4ZI-fits
+###
+
+plotHHH4ZI_maxEV <- function (...,
+                            matplot.args = list(), refline.args = list(),
+                            legend.args = list())
+{
+  objnams <- unlist(lapply(match.call(expand.dots=FALSE)$..., deparse))
+  objects <- surveillance:::getHHH4list(..., .names = objnams)
+
+  ## get time points
+  epoch <- attr(objects, "epoch")
+  start <- attr(objects, "start")
+  freq <- attr(objects, "freq")
+  start0 <- surveillance:::yearepoch2point(start, freq, toleft=TRUE)
+  tp <- start0 + seq_along(epoch) / freq
+
+  ## compute course of dominant eigenvalue for all models
+  maxEV <- sapply(objects, getMaxEV, simplify=TRUE, USE.NAMES=TRUE)
+  ## line style
+  ylimi <- c(0, max(2, maxEV, na.rm = TRUE))
+  matplot.args <- modifyList(
+    list(type="l", col=c(1,2,6,3), lty=c(1,3,2,4), lwd=1.7, cex=1, pch=NULL,
+         xlab="", ylab="dominant eigenvalue", ylim= ylimi),
+    matplot.args)
+
+  ## main plot
+  do.call("matplot", c(list(x=tp, y=maxEV), matplot.args))
+
+  ## add reference line
+  if (is.list(refline.args))
+    do.call("abline", modifyList(list(h=1, lty=3, col="grey"),
+                                 refline.args))
+
+  ## add legend
+  if (missing(legend.args) && length(objects) == 1)
+    legend.args <- NULL             # omit legend
+  if (is.list(legend.args)) {
+    legend.args <- modifyList(
+      c(list(x="topright", inset=0.02, legend=names(objects), bty="n"),
+        matplot.args[c("col", "lwd", "lty", "pch")],
+        with(matplot.args, list(pt.cex=cex, text.col=col))),
+      legend.args)
+    do.call("legend", legend.args)
+  }
+
+  ## done
+  invisible(maxEV)
+}
+
+getMaxEV <- function (x)
+{
+  Lambda <- createLambda(x)
+  if (identical(type <- attr(Lambda, "type"), "zero")) {
+    rep.int(0, nrow(x$stsObj))
+  } else {
+    diagonal <- identical(type, "diagonal")
+    vapply(X = seq_len(nrow(x$stsObj)),
+           FUN = function (t)
+             surveillance:::maxEV(Lambda(t), symmetric = FALSE, diagonal = diagonal),
+           FUN.VALUE = 0, USE.NAMES = FALSE)
+  }
+}
+
+
+## generate a function that computes the Lambda_t matrix
+createLambda <- function (object)
+{
+  nTime <- nrow(object$stsObj)
+  nUnit <- object$nUnit
+  gamma <- object$gamma
+  ngamma <- nrow(gamma)
+  # gamma can have autoregressive component, and thus time length is different
+  # insert NA's at beginning of gamma
+  if (nTime > ngamma){
+    add_rows <- as.data.frame(matrix(nrow = (nTime - ngamma),
+                                     ncol = nUnit))
+    colnames(add_rows) = colnames(gamma)
+    gamma <- rbind(add_rows,
+                   gamma)
+  }
+  if (identical(componentsHHH4ZI(object), "end")) { # no epidemic components
+    zeromat <- matrix(0, nUnit, nUnit)
+    Lambda <- function (t) zeromat
+    attr(Lambda, "type") <- "zero"
+    return(Lambda)
+  }
+
+  exppreds <- surveillance:::get_exppreds_with_offsets(object)
+
+  W <- surveillance::getNEweights(object)
+  Wt <- if (is.null(W)) {
+    NULL
+  } else if (is.matrix(W)) {
+    function (t) W
+  } else {
+    function (t) W[,,t]
+  }
+
+  type <- NULL
+  Lambda <- if (is.null(Wt)) {        # no neighbourhood component
+    type <- "diagonal"
+    function (t) {
+      stopifnot(surveillance:::isScalar(t) && t > 0 && t <= nTime)
+      diag((1 - gamma[t,]) * exppreds$ar[t,], nUnit, nUnit)
+    }
+  } else {
+    function (t) {
+      stopifnot(surveillance:::isScalar(t) && t > 0 && t <= nTime)
+      Lambda <- exppreds$ne[t,] * t(Wt(t))
+      diag(Lambda) <- (1 - gamma[t,]) * (diag(Lambda) + exppreds$ar[t,])
+      Lambda
+    }
+  }
+  attr(Lambda, "type") <- type
+  Lambda
+}
 
 ###
 ### Map of estimated random intercepts of a specific component
