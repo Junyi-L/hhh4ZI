@@ -23,7 +23,6 @@
 #'
 #' @import graphics
 #' @export
-# no maxEV
 plot.hhh4ZI <- function (x,
                          type = c("fitted", "maxEV", "season", "maps", "ri", "neweights"),
                          ...)
@@ -344,8 +343,12 @@ plotHHH4ZI_maps <- function (x,
 
 ###
 ### Plot the course of the dominant eigenvalue of one or several hhh4ZI-fits
-###
-
+######
+#' @rdname plot.hhh4ZI
+#' @importFrom grDevices n2mfrow
+#' @importFrom sp spplot
+#' @import methods
+#' @export
 plotHHH4ZI_maxEV <- function (...,
                             matplot.args = list(), refline.args = list(),
                             legend.args = list())
@@ -574,7 +577,7 @@ plotHHH4ZI_season <- function (...,
     intersect(c("end", "ar", "ne", "zi"), unique(unlist(
       lapply(objects, componentsHHH4ZI), use.names = FALSE)))
   } else {
-    match.arg(components, choices = c("ar", "ne", "end", "zi","maxEV"),
+    match.arg(components, choices = c("ar", "ne", "end", "zi"),
               several.ok = TRUE)
   }
 
@@ -597,19 +600,17 @@ plotHHH4ZI_season <- function (...,
 
   ## component-specific arguments
   ylim <- withDefaults(ylim,
-                       list(ar=NULL, ne=NULL, end=NULL, zi = NULL, maxEV=NULL))
+                       list(ar=NULL, ne=NULL, end=NULL, zi = NULL))
   ylab <- withDefaults(ylab,
                        list(ar=expression(hat(lambda)),
                             ne=expression(hat(phi)),
                             end=expression(hat(nu)),
-                            zi = expression(hat(gamma)),
-                            maxEV="dominant eigenvalue"))
+                            zi = expression(hat(gamma))))
   main <- withDefaults(main,
                        list(ar="autoregressive component",
                             ne="spatiotemporal component",
                             end="endemic component",
-                            zi = "zero-inflation component",
-                            maxEV="dominant eigenvalue"))
+                            zi = "zero-inflation component"))
   anyMain <- any(unlist(lapply(main, nchar),
                         recursive=FALSE, use.names=FALSE) > 0)
 
@@ -646,7 +647,7 @@ plotHHH4ZI_season <- function (...,
 
   ## plot seasonality in individual model components
   seasons <- list()
-  for(comp in setdiff(components, "maxEV")){
+  for(comp in components){
     s2 <- lapply(objects, getSeason, component = comp,
                  unit = unit, period = period)
     seasons[[comp]] <- exp(vapply(s2, FUN = if (intercept) {
@@ -665,22 +666,7 @@ plotHHH4ZI_season <- function (...,
       do.call("legend", legend.args)
   }
 
-  ## plot seasonality of dominant eigenvalue
-  # if ("maxEV" %in% components) {
-  #   seasons[["maxEV"]] <- vapply(objects, FUN = function (obj) {
-  #     getMaxEV_season(obj, period = period)$maxEV.season
-  #   }, FUN.VALUE = numeric(period), USE.NAMES = TRUE)
-  #   do.call("matplot",
-  #           c(list(seasons[["maxEV"]], xlim=xlim,
-  #                  ylim=if (is.null(ylim[["maxEV"]]))
-  #                    c(0,max(2,seasons[["maxEV"]])) else ylim[["maxEV"]],
-  #                  xlab=xlab, ylab=ylab[["maxEV"]],
-  #                  main=main[["maxEV"]]), matplot.args))
-  #   if (is.list(refline.args))
-  #     do.call("abline", modifyList(list(h=1, lty=3, col="grey"),
-  #                                  refline.args))
-  #   if (4 %in% legend) do.call("legend", legend.args)
-  # }
+
 
   ## invisibly return the data that has been plotted
   invisible(seasons)

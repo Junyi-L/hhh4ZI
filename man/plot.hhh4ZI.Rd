@@ -5,6 +5,7 @@
 \alias{plotHHH4ZI_fitted}
 \alias{plotHHH4ZI_fitted1}
 \alias{plotHHH4ZI_maps}
+\alias{plotHHH4ZI_maxEV}
 \alias{plotHHH4ZI_ri}
 \alias{plotHHH4ZI_season}
 \alias{plotHHH4ZI_neweights}
@@ -64,6 +65,13 @@ plotHHH4ZI_maps(
   ...,
   map = x$stsObj@map,
   meanHHH = NULL
+)
+
+plotHHH4ZI_maxEV(
+  ...,
+  matplot.args = list(),
+  refline.args = list(),
+  legend.args = list()
 )
 
 plotHHH4ZI_ri(
