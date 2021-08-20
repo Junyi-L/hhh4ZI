@@ -573,6 +573,7 @@ plotHHH4ZI_season <- function (...,
   objnams <- unlist(lapply(match.call(expand.dots=FALSE)$..., deparse))
   objects <- surveillance:::getHHH4list(..., .names = objnams)
   freq <- attr(objects, "freq")
+  if (is.null(period)) period <- freq
   components <- if (is.null(components)) {
     intersect(c("end", "ar", "ne", "zi"), unique(unlist(
       lapply(objects, componentsHHH4ZI), use.names = FALSE)))
