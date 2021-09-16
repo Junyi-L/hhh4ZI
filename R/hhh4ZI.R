@@ -1741,8 +1741,6 @@ getSigma <- function(sd, correlation, dimSigma, dimBlocks, Sigmai=NULL){
 }
 
 ## Approximate marginal likelihood for variance components
-## Parameter and model unpacking at the beginning (up to the ###...-line) is
-## identical in marScore() and marFisher()
 marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
 
   dimVar <- model$nVar
@@ -1799,6 +1797,16 @@ marLogLik <- function(sd.corr, theta, model, fisher.unpen=NULL, verbose=FALSE){
   lmarg <- loglik.pen -0.5*c(logdetfisher)
 
   return(lmarg)
+}
+
+## approximation based on the numerically differentiated Hessian matrix
+marFisher <- function(sd.corr, theta, model, fisher.unpen=NULL){
+
+  if(model$nSigma == 0) return(matrix(numeric(0L), 0L, 0L))
+  if(any(is.na(sd.corr))) stop("NAs in variance parameters.", ADVICEONERROR)
+
+  - optimHess(par = sd.corr, fn = marLogLik,
+              theta = theta, model = model, fisher.unpen = fisher.unpen)
 }
 
 
@@ -1938,13 +1946,16 @@ fitHHH4ZI <- function(theta, sd.corr, model,
       "Optimization converged" else "Optimization DID NOT CONVERGE", "\n\n")
   }
 
-  ll <- penLogLik(theta=theta,sd.corr=sd.corr,model=model)
-  fisher <- penFisher(theta=theta,sd.corr=sd.corr,model=model)
+  ll     <- penLogLik(theta, sd.corr, model)
+  fisher <- penFisher(theta, sd.corr, model, attributes = TRUE)
   dimnames(fisher) <- list(names(theta), names(theta))
-  margll <- marLogLik(sd.corr=sd.corr, theta=theta, model=model)
+  margll     <- marLogLik(sd.corr, theta, model)
+  fisher.var <- marFisher(sd.corr, theta, model, attr(fisher, "fisher"))
+  dimnames(fisher.var) <- list(names(sd.corr), names(sd.corr))
 
   list(theta=theta, sd.corr=sd.corr,
-       loglik=ll, margll=margll,fisher=fisher,
+       loglik=ll, margll=margll,
+       fisher=fisher, fisherVar=fisher.var,
        convergence=convergence, dim=c(fixed=dimFE.d.O,random=dimRE))
 
 }
