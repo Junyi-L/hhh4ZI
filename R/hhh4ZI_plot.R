@@ -307,8 +307,9 @@ plotHHH4ZI_maps <- function (x,
       ceiling(10*sapply(comps, max))/10
     } else ceiling(sapply(comps, max))
     ## sub-components should have the same color range
-    .idxsub <- setdiff(seq_along(zmax), match("mean", names(zmax)))
+    .idxsub <- setdiff(seq_along(zmax), match(c("mean", "zi"), names(zmax)))
     zmax[.idxsub] <- suppressWarnings(max(zmax[.idxsub]))
+    if ("zi" %in% names(zmax)) zmax["zi"] <- 1
   }
 
   ## add sp.layout item for district labels
@@ -320,12 +321,10 @@ plotHHH4ZI_maps <- function (x,
   grobs <- mapply(
     FUN = function (zcol, main, zmax)
       if (is.na(zmax)) { # automatic color breaks over range of values
-        if(zcol == "zi") zmax = 1
         spplot(map, zcol = zcol, main = main,
                cuts = length(col.regions) - 1L,
                col.regions = col.regions, sp.layout = sp.layout, ...)
       } else { # breakpoints from 0 to zmax
-        if(zcol == "zi") zmax = 1
         spplot(map, zcol = zcol, main = main,
                at = seq(0, zmax, length.out = length(col.regions) + 1L),
                col.regions = col.regions, sp.layout = sp.layout, ...)
