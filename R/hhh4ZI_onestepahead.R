@@ -180,7 +180,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
     if (do_pb) pb <- txtProgressBar(min=0, max=ntps, initial=0, style=3)
     for(i in seq_along(tps)) {
       if (do_pb) setTxtProgressBar(pb, i) else if (verbose) {
-        cat("\nOne-step-ahead prediction @ t =", tps[i], "...\n")
+        cat("One-step-ahead prediction @ t =", tps[i], "...\n")
       }
 
       if (type == "rolling") { # update fit
