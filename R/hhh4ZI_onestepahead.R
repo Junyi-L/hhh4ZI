@@ -93,7 +93,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
 
   ## initial fit
   fit <- if (type == "first") {
-    if (do_pb)
+    if (verbose)
       cat("\nRefitting model at first time point t =", tps[1L], "...\n")
     update.hhh4ZI(result, subset.upper = tps[1L], use.estimates = TRUE,
                   keep.terms = TRUE) # need "model" -> $terms
@@ -179,9 +179,9 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
 
     if (do_pb) pb <- txtProgressBar(min=0, max=ntps, initial=0, style=3)
     for(i in seq_along(tps)) {
-      if (verbose > 1L) {
+      if (do_pb) setTxtProgressBar(pb, i) else if (verbose) {
         cat("\nOne-step-ahead prediction @ t =", tps[i], "...\n")
-      } else if (do_pb) setTxtProgressBar(pb, i)
+      }
 
       if (type == "rolling") { # update fit
         fit.old <- fit # backup
