@@ -1,15 +1,17 @@
 ################################################################################
 ### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
-### based on ...
+### based on
 ###
+### Lu and Meyer (2021): A zero-inflated endemic-epidemic infectious disease
+### model with an application to measles epidemics in Germany.
 ###
 ### RUNNING THE WHOLE SCRIPT TAKES around 90 minutes!
 ###
-### Copyright (C)
+### Copyright (C) 2021 Junyi Lu and Sebastian Meyer
 ###
 ### This file is part of the R package "hhh4ZI",
 ### free software under the terms of the GNU General Public License, version 2,
-### a copy of which is available at http://www.r-project.org/Licenses/.
+### a copy of which is available at https://www.R-project.org/Licenses/.
 ################################################################################
 
 library(hhh4ZI)
@@ -19,6 +21,12 @@ library(hhh4ZI)
 set.seed(20210720)
 
 ptm <- proc.time()
+
+
+##################
+# Data preparation
+##################
+
 # compute adjusted proportion of vaccinated school starters by year and state
 # using the same assumptions as in Herzog et al. (2011)
 PassRate <- VacPass/TotalKids
