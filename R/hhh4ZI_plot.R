@@ -520,16 +520,18 @@ plotHHH4ZI_ri <- function (x, component, exp = FALSE,
          at = at, colorkey = colorkey, ...)
 }
 
+#' @importFrom surveillance ranef
+#' @export
 ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
 {
   if (object$dim[2L] > 0){
-    ranefvec <- tail(surveillance:::coef.hhh4(object, ...), object$dim[2L])
+    ranefvec <- tail(coef(object, ...), object$dim[2L])
   } else return(NULL)
   if (intercept) tomatrix <- TRUE
   if (!tomatrix) return(ranefvec)
 
   ## transform to a nUnits x c matrix (c %in% 1:3)
-  model <- terms.hhh4ZI(object)
+  model <- terms(object)
   idxRE <- model$indexRE
   idxs <- unique(idxRE)
   mat <- vapply(X = idxs, FUN = function (idx) {

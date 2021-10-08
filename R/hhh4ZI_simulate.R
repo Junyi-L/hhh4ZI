@@ -136,6 +136,7 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
   res
 }
 
+#' @export
 terms.hhh4ZI <- function (x, ...)
 {
   if (is.null(x$terms))
