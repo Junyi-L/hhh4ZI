@@ -1,7 +1,7 @@
 Package: hhh4ZI
 Type: Package
 Title: Zero-Inflated Endemic-Epidemic Count Time Series
-Version: 0.2.1
+Version: 0.2.2
 Author: Junyi Lu, Sebastian Meyer
 Maintainer: Junyi Lu <junyi.lu@fau.de>
 Description: Extending surveillance::hhh4() for zero-inflated infectious disease counts.
