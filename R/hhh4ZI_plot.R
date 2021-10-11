@@ -467,7 +467,7 @@ createLambda <- function (object)
 ### Map of estimated random intercepts of a specific component
 ###
 #' @rdname plot.hhh4ZI
-#' @importFrom grDevices cm.colors
+#' @importFrom grDevices axisTicks cm.colors
 #' @importFrom sp spplot
 #' @import methods
 #' @export
@@ -487,23 +487,48 @@ plotHHH4ZI_ri <- function (x, component, exp = FALSE,
   map <- as(x$stsObj@map, "SpatialPolygonsDataFrame")
   if (length(map) == 0L) stop("'x$stsObj' has no map")
   map$ranef <- ranefmatrix[,comp][row.names(map)]
-  .range <- c(-1, 1) * max(abs(map$ranef), na.rm = TRUE)  # 0-centered
-  if (exp) {
-    map$ranef <- exp(map$ranef)
-    .range <- exp(.range)
-  }
 
   if (is.list(at)) {
-    at <- modifyList(list(n = 10, range = .range), at)
-    at <- if (exp) {
-      stopifnot(at$range[1] > 0)
-      scales::log_breaks(n = at$n)(at$range)
-    } else {
-      seq(at$range[1L], at$range[2L], length.out = at$n)
+    if (is.null(at[["n"]]))
+      at$n <- 10
+    if (is.null(at[["range"]])) {
+      at$range <- c(-1, 1) * max(abs(map$ranef), na.rm = TRUE)  # 0-centered
+    } else if (exp) { # custom range given on exp-scale
+      stopifnot(at$range > 0)
+      at$range <- log(at$range)
     }
-    if (exp && isTRUE(colorkey))
-      colorkey <- list(at = log(at),
-                       labels = list(at = log(at), labels = at))
+    at <- seq(at$range[1L], at$range[2L], length.out = at$n)
+    ## include max value (levelplot uses right-open intervals)
+    at[length(at)] <- at[length(at)] + sqrt(.Machine$double.eps)
+  } else {
+    stopifnot(is.numeric(at), length(at) > 2)
+    if (exp) { # custom breaks given on exp-scale
+      stopifnot(at > 0)
+      at <- log(at)
+    }
+  }
+  rng <- range(map$ranef, na.rm = TRUE)
+  if (rng[1] < at[1] | rng[2] >= at[length(at)]) {
+    if (exp) rng <- exp(rng)
+    warning(paste0(
+        sprintf("color breaks ('at') do not span range of data (%.3g,%.3g)",
+                rng[1], rng[2]),
+        if (exp) " (exp-scale)"))
+  }
+  
+  if (isTRUE(colorkey)) colorkey <- list()
+  if (exp && is.list(colorkey) && is.null(colorkey[["labels"]])) {
+    ## use exp-scale axis labels
+    if (is.null(nint <- colorkey[["tick.number"]]))
+      nint <- 7
+    lab <- if (requireNamespace("scales", quietly = TRUE)) {
+      scales::log_breaks(n = nint)(exp(at))
+    } else {
+      axisTicks(log10(exp(range(at))), log = TRUE, nint = nint)
+    }
+    ## workaround colorkey labeling bug in lattice (0.20.45)
+    lab <- lab[log(lab) > at[1]]
+    colorkey$labels <- list(at = log(lab), labels = lab)
   }
 
   if (is.list(gpar.missing) && any(is.na(map$ranef))) {
