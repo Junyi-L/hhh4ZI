@@ -5,7 +5,7 @@ library("surveillance")
 library("openxlsx")
 library("here")
 
-measles <- read.xlsx(here("develop", "data.xlsx"))
+measles <- read.xlsx(here("develop","data", "data.xlsx"))
 measles$Unknown <- NULL
 measles[is.na(measles)] <- 0
 names(measles)[1] <- "date"
@@ -47,7 +47,7 @@ row.names(statesD) <- namesDE <- c(
 
 ## add population as map data
 namesDE <- sort(namesDE)
-Population <- read.xlsx(here("develop", "population.xlsx"),
+Population <- read.xlsx(here("develop","data", "population.xlsx"),
                         sheet = 3, startRow = 2, rowNames = TRUE)
 colnames(Population) <- namesDE[order(colnames(Population))]
 Population <- Population[, row.names(statesD)]
@@ -79,22 +79,22 @@ save(measles, file = here("data", "measles.rda"))
 
 ### load vaccination coverage
 
-TotalKids <- read.xlsx(here("develop", "coverage.xlsx"),
+TotalKids <- read.xlsx(here("develop", "data","coverage.xlsx"),
                        sheet = 1, startRow = 2, rowNames = TRUE, sep.names = " ")
 TotalKids <- TotalKids[, colnames(measles)]
 
-VacPass <- read.xlsx(here("develop", "coverage.xlsx"),
+VacPass <- read.xlsx(here("develop","data", "coverage.xlsx"),
                      sheet = 2, startRow = 2, rowNames = TRUE, sep.names = " ")
 VacPass <- VacPass[, colnames(measles)]
 
-Dosis1 <- read.xlsx(here("develop", "coverage.xlsx"),
+Dosis1 <- read.xlsx(here("develop","data", "coverage.xlsx"),
                     sheet = 3, startRow = 2, rowNames = TRUE, sep.names = " ")
 Dosis1 <- Dosis1[, colnames(measles)]
 
-Dosis2 <- read.xlsx(here("develop", "coverage.xlsx"),
+Dosis2 <- read.xlsx(here("develop","data", "coverage.xlsx"),
                     sheet = 4, startRow = 2, rowNames = TRUE, sep.names = " ")
 Dosis2 <- Dosis2[, colnames(measles)]
 
 
 save(list = c("TotalKids", "VacPass",
-              "Dosis1", "Dosis2"), file = here("./data/Coverage.rda"))
+              "Dosis1", "Dosis2"), file = here("data","Coverage.rda"))
