@@ -70,7 +70,7 @@ model.P0 <- list(ar = list(f = f.ar),
                  optimizer = control.optimizer)
 # fit the model
 result.P0 <- hhh4(measles, model.P0)
-summary(result.P0)
+summary(result.P0, amplitudeShift = TRUE, maxEV = TRUE)
 
 
 #############################
@@ -87,7 +87,7 @@ model.NB1 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.NB1 <- hhh4(measles, model.NB1)
-summary(result.NB1)
+summary(result.NB1, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model NB2 ############
@@ -105,7 +105,7 @@ model.NB2 <- list(ar = list(f = f.ar, offset =  Vac0),
                   optimizer = control.optimizer)
 
 result.NB2 <- hhh4(measles, model.NB2)
-summary(result.NB2)
+summary(result.NB2, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model NB3############
@@ -123,7 +123,7 @@ model.NB3 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.NB3 <- hhh4(measles, model.NB3)
-summary(result.NB3)
+summary(result.NB3, amplitudeShift = TRUE, maxEV = TRUE)
 
 
 #############################
@@ -142,7 +142,7 @@ model.ZI1 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.ZI1 <- hhh4ZI(measles, model.ZI1)
-summary(result.ZI1)
+summary(result.ZI1, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model ZI2 ############
@@ -161,7 +161,7 @@ model.ZI2 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.ZI2 <- hhh4ZI(measles, model.ZI2)
-summary(result.ZI2)
+summary(result.ZI2, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model ZI3 ############
@@ -181,7 +181,7 @@ model.ZI3 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.ZI3 <- hhh4ZI(measles, model.ZI3)
-summary(result.ZI3)
+summary(result.ZI3, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model ZI4 ############
@@ -202,7 +202,7 @@ model.ZI4 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   optimizer = control.optimizer)
 
 result.ZI4 <- hhh4ZI(measles, model.ZI4)
-summary(result.ZI4)
+summary(result.ZI4, amplitudeShift = TRUE, maxEV = TRUE)
 
 #############################
 ####### Model ZI5 ############
@@ -224,51 +224,7 @@ model.ZI5 <- list(ar = list(f = f.ar, offset =  Vac0 ),
                   verbose = TRUE)
 
 result.ZI5 <- hhh4ZI(measles, model.ZI5)
-summary(result.ZI5)
-
-
-#############################
-####### Model ZI6 ############
-#############################
-
-f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none"),
-                           S = 2, period = 52)
-f.ar <- addSeason2formula(f = ~-1  +  ri(type = "iid", corr = "none"),
-                          S = 2, period = 52)
-f.zi <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none")  + Vac0,
-                          S = 2, period = 52)
-
-model.ZI6 <- list(ar = list(f = f.ar, offset =  Vac0 ),
-                  end = list(f = f.end, offset = population(measles) * Vac0 ),
-                  zi = list(f = f.zi),
-                  data = covarlist,
-                  family = "NegBinM",
-                  optimizer = control.optimizer)
-
-result.ZI6 <- hhh4ZI(measles, model.ZI6)
-summary(result.ZI6)
-
-#############################
-####### Model ZI7 ############
-#############################
-
-f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
-                           S = 2, period = 52)
-f.ar <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
-                          S = 2, period = 52)
-f.zi <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all") + Vac0,
-                          S = 2, period = 52)
-
-
-model.ZI7 <- list(ar = list(f = f.ar, offset = Vac0 ),
-                  end = list(f = f.end, offset = population(measles) * Vac0 ),
-                  zi = list(f = f.zi),
-                  data = covarlist,
-                  family = "NegBinM",
-                  optimizer = control.optimizer)
-
-result.ZI7 <- hhh4ZI(measles, model.ZI7)
-summary(result.ZI7)
+summary(result.ZI5, amplitudeShift = TRUE, maxEV = TRUE)
 
 
 ###########################################################
