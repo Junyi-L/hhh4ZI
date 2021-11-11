@@ -16,9 +16,9 @@
 
 library(hhh4ZI)
 
-
 # for reproducibility, as ri() parameters are initialized randomly
-set.seed(20210720)
+RNGversion("3.6.3")
+set.seed(10052021)
 
 ptm <- proc.time()
 
@@ -235,11 +235,14 @@ plot(result.ZI3, type = "season", period = 52, components = c("en", "ar"),
 plotHHH4ZI_maxEV(result.ZI3)
 plotHHH4ZI_fitted(unit = 1:8,result.ZI3, par.settings = list(mfrow=c(4,2)))
 plotHHH4ZI_fitted(unit = 9:16,result.ZI3, par.settings = list(mfrow=c(4,2)))
-plotHHH4ZI_maps(result.ZI3, which = c("mean", "endemic"))
-plotHHH4ZI_maps(result.ZI3, which = c("epi.own", "zi"))
-plotHHH4ZI_ri(result.ZI3, component = "ar.ri(iid)", main = "epi.own")
-plotHHH4ZI_ri(result.ZI3, component = "end.ri(iid)", main = "endemic")
-plotHHH4ZI_ri(result.ZI3, component = "zi.ri(iid)", main = "zi")
+plotHHH4ZI_maps(result.ZI3,
+                which = c("mean", "endemic", "epi.own", "zi"),
+                zmax = c(NA, NA, NA, 1),
+                main = c("fitted counts", "endemic", "autoregressive", "ZI probability"),
+                par.settings = list(add.line = list(col = "white")))
+plotHHH4ZI_ri(result.ZI3, component = "ar.ri(iid)", main = "epi.own", exp = TRUE)
+plotHHH4ZI_ri(result.ZI3, component = "end.ri(iid)", main = "endemic", exp = TRUE)
+plotHHH4ZI_ri(result.ZI3, component = "zi.ri(iid)", main = "zi", exp = TRUE)
 
 ######################################################################
 # Compare the predictive performance of the models by computing
@@ -257,6 +260,7 @@ score_list <- list()
 # forecast
 for (model_name in model_names){
   modeli <- get(paste0("result.", model_name))
+  cat("\n--- forecasting with", model_name, "---\n")
   osai <- oneStepAhead(modeli, tp = tp, type = type, which.start = "final")
   score_list[[i]] <-
     scorei <- scores(osai)
