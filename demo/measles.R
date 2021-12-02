@@ -292,4 +292,4 @@ score_table2 <- data.frame(model_names, printformat(score_table[,1]),
 colnames(score_table2) <- c("Model", "LS", "p-value","maxLS", "DSS","RPS", "SES")
 print(score_table2)
 
-ptm <- ptm -proc.time()
+cat("Time elapsed: ", proc.time() - ptm, "\n")
