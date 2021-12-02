@@ -1,0 +1,1861 @@
+
+R version 4.1.2 (2021-11-01) -- "Bird Hippie"
+Copyright (C) 2021 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ################################################################################
+> ### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
+> ### based on
+> ###
+> ### Lu and Meyer (2021): A zero-inflated endemic-epidemic infectious disease
+> ### model with an application to measles epidemics in Germany.
+> ###
+> ### RUNNING THE WHOLE SCRIPT TAKES around 90 minutes!
+> ###
+> ### Copyright (C) 2021 Junyi Lu and Sebastian Meyer
+> ###
+> ### This file is part of the R package "hhh4ZI",
+> ### free software under the terms of the GNU General Public License, version 2,
+> ### a copy of which is available at https://www.R-project.org/Licenses/.
+> ################################################################################
+> 
+> library(hhh4ZI)
+Loading required package: surveillance
+Loading required package: sp
+Loading required package: xtable
+This is surveillance 1.19.1. For overview type ‘help(surveillance)’.
+
+Attaching package: ‘hhh4ZI’
+
+The following object is masked from ‘package:surveillance’:
+
+    oneStepAhead
+
+> 
+> # for reproducibility, as ri() parameters are initialized randomly
+> RNGversion("3.6.3")
+> set.seed(10052021)
+> 
+> ptm <- proc.time()
+> 
+> 
+> ##################
+> # Data preparation
+> ##################
+> 
+> # compute adjusted proportion of vaccinated school starters by year and state
+> # using the same assumptions as in Herzog et al. (2011)
+> PassRate <- VacPass/TotalKids
+> Dosis1Rate <- PassRate * Dosis1/100 + (1 - PassRate) * 0.5 * Dosis1/100
+> 
+> # Impute two missing values in Hamburg via LOCF
+> Dosis1Rate[c("2017", "2018"), "Hamburg"] <- Dosis1Rate["2016", "Hamburg"]
+> stopifnot(!anyNA(Dosis1Rate))
+> 
+> # setup covariate matrix for dim(measles), i.e., replicate each row 26 times
+> Dosis1Rate <- as.matrix(Dosis1Rate)
+> Coverage <- Dosis1Rate[rep(1 : nrow(Dosis1Rate), each = measles@freq),]
+> rm(list = c("PassRate", "Dosis1Rate"))
+> 
+> # covariate data for the model: time index and log(proportion unvaccinated)
+> covarlist <- list(t = epoch(measles),
++                   logVac0 = log(1 - Coverage))
+> Vac0 <-  (1 - 0.92 * Coverage)
+> # higher niter is needed for forecast procedure
+> control.optimizer <-  list(stop = list(tol = 1e-5, niter = 200), # control arguments
++                            regression = list(method = "nlminb"), # for optimization
++                            variance = list(method = "Nelder-Mead"))  # <- or "Nelder-Mead"
+> 
+> ##################################################
+> # Fit the models
+> ##################################################
+> 
+> #############################
+> ####### Model P0 ############
+> #############################
+> 
+> # endemic component: Intercept + sine/cosine terms
+> f.end <- addSeason2formula(f = ~ 1, S = 1, period = 26)
+> # autoregressive component: Intercept + proportion unvaccinated
+> f.ar <- ~ 1 + logVac0
+> 
+> model.P0 <- list(ar = list(f = f.ar),
++                  end = list(f = f.end, offset = population(measles)),
++                  data = covarlist,
++                  family = "Poisson",
++                  optimizer = control.optimizer)
+> # fit the model
+> result.P0 <- hhh4(measles, model.P0)
+> summary(result.P0, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4(stsObj = measles, control = model.P0)
+
+Coefficients:
+                      Estimate  Std. Error
+ar.1                   0.71302   0.11912  
+ar.logVac0             0.36329   0.04754  
+end.1                  1.92432   0.02568  
+end.A(2 * pi * t/26)   0.54802   0.03603  
+end.s(2 * pi * t/26)  -0.46187   0.04807  
+
+Epidemic dominant eigenvalue:  0.86 -- 1.00 
+
+Log-likelihood:   -9299.52 
+AIC:              18609.03 
+BIC:              18642.37 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> 
+> #############################
+> ####### Model NB1 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~ 1, S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~ 1, S = 2, period = 52)
+> 
+> model.NB1 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.NB1 <- hhh4(measles, model.NB1)
+> summary(result.NB1, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4(stsObj = measles, control = model.NB1)
+
+Coefficients:
+                                        Estimate  Std. Error
+ar.1                                     1.38466   0.03909  
+ar.A(2 * pi * t/52)                      0.11051   0.05583  
+ar.s(2 * pi * t/52)                      1.16427   0.04027  
+ar.A(4 * pi * t/52)                      0.42761   0.05237  
+ar.s(4 * pi * t/52)                     -0.05785   0.11661  
+end.1                                    3.98198   0.03479  
+end.A(2 * pi * t/52)                     0.13387   0.04687  
+end.s(2 * pi * t/52)                     1.02882   0.04678  
+end.A(4 * pi * t/52)                     0.44389   0.04828  
+end.s(4 * pi * t/52)                    -0.81050   0.05094  
+overdisp.Schleswig-Holstein              1.24555   0.23718  
+overdisp.Hamburg                         0.83959   0.20873  
+overdisp.Lower Saxony                    1.15508   0.18227  
+overdisp.Bremen                          4.73186   1.70623  
+overdisp.North Rhine-Westphalia          0.64672   0.08359  
+overdisp.Hesse                           0.86306   0.15029  
+overdisp.Rhineland-Palatinate            0.78068   0.17472  
+overdisp.Baden-Wuerttemberg              0.84213   0.12114  
+overdisp.Bavaria                         0.48730   0.05831  
+overdisp.Saarland                        3.47462   1.99957  
+overdisp.Berlin                          0.79918   0.12727  
+overdisp.Brandenburg                     1.64200   0.38790  
+overdisp.Mecklenburg-Western Pomerania   4.54440   2.61179  
+overdisp.Saxony                          1.96416   0.45267  
+overdisp.Saxony-Anhalt                   3.24235   0.88297  
+overdisp.Thuringia                      10.27468   2.43151  
+
+Epidemic dominant eigenvalue:  0.41 -- 1.42 
+
+Log-likelihood:   -7059.04 
+AIC:              14170.09 
+BIC:              14343.43 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model NB2 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none"),
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~ -1 + ri(type = "iid", corr = "none"),
++                           S = 2, period = 52)
+> 
+> model.NB2 <- list(ar = list(f = f.ar, offset =  Vac0),
++                   end = list(f = f.end, offset = population(measles) * Vac0),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.NB2 <- hhh4(measles, model.NB2)
+> summary(result.NB2, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4(stsObj = measles, control = model.NB2)
+
+Random effects:
+            Var    Corr 
+ar.ri(iid)  0.0472      
+end.ri(iid) 0.2261 0    
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.13160   0.05508  
+ar.s(2 * pi * t/52)                      1.34869   0.03499  
+ar.A(4 * pi * t/52)                      0.44003   0.05198  
+ar.s(4 * pi * t/52)                     -0.03494   0.11334  
+ar.ri(iid)                               1.30777   0.07480  
+end.A(2 * pi * t/52)                     0.13253   0.04570  
+end.s(2 * pi * t/52)                     0.98945   0.04735  
+end.A(4 * pi * t/52)                     0.44436   0.04750  
+end.s(4 * pi * t/52)                    -0.82698   0.04883  
+end.ri(iid)                              3.94182   0.12495  
+overdisp.Schleswig-Holstein              1.08654   0.21312  
+overdisp.Hamburg                         0.77188   0.19246  
+overdisp.Lower Saxony                    1.08735   0.17657  
+overdisp.Bremen                          4.24692   1.60943  
+overdisp.North Rhine-Westphalia          0.59581   0.07839  
+overdisp.Hesse                           0.84134   0.14800  
+overdisp.Rhineland-Palatinate            0.68356   0.16293  
+overdisp.Baden-Wuerttemberg              0.77449   0.11264  
+overdisp.Bavaria                         0.47421   0.05708  
+overdisp.Saarland                        2.69868   1.54141  
+overdisp.Berlin                          0.70512   0.11300  
+overdisp.Brandenburg                     1.61418   0.38622  
+overdisp.Mecklenburg-Western Pomerania   1.58206   0.93845  
+overdisp.Saxony                          1.68339   0.38806  
+overdisp.Saxony-Anhalt                   3.16029   0.86770  
+overdisp.Thuringia                      10.30099   2.43876  
+
+Epidemic dominant eigenvalue:  0.40 -- 1.52 
+
+Penalized log-likelihood:  -6966.87 
+Marginal log-likelihood:   -92.6 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model NB3############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~ -1 + ri(type = "iid", corr = "all"),
++                           S = 2, period = 52)
+> 
+> model.NB3 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.NB3 <- hhh4(measles, model.NB3)
+> summary(result.NB3, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4(stsObj = measles, control = model.NB3)
+
+Random effects:
+            Var   Corr    
+ar.ri(iid)  0.053         
+end.ri(iid) 0.229 -0.5043 
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.13143   0.05504  
+ar.s(2 * pi * t/52)                      1.34060   0.03518  
+ar.A(4 * pi * t/52)                      0.43905   0.05189  
+ar.s(4 * pi * t/52)                     -0.03239   0.11360  
+ar.ri(iid)                               1.32451   0.07651  
+end.A(2 * pi * t/52)                     0.13105   0.04570  
+end.s(2 * pi * t/52)                     0.99468   0.04712  
+end.A(4 * pi * t/52)                     0.44425   0.04753  
+end.s(4 * pi * t/52)                    -0.82656   0.04885  
+end.ri(iid)                              3.94164   0.12563  
+overdisp.Schleswig-Holstein              1.08434   0.21249  
+overdisp.Hamburg                         0.77450   0.19292  
+overdisp.Lower Saxony                    1.09004   0.17697  
+overdisp.Bremen                          4.18552   1.59222  
+overdisp.North Rhine-Westphalia          0.59508   0.07829  
+overdisp.Hesse                           0.84119   0.14797  
+overdisp.Rhineland-Palatinate            0.68327   0.16282  
+overdisp.Baden-Wuerttemberg              0.77386   0.11257  
+overdisp.Bavaria                         0.47394   0.05706  
+overdisp.Saarland                        2.68819   1.53992  
+overdisp.Berlin                          0.70829   0.11343  
+overdisp.Brandenburg                     1.61802   0.38684  
+overdisp.Mecklenburg-Western Pomerania   1.65330   0.96278  
+overdisp.Saxony                          1.67309   0.38553  
+overdisp.Saxony-Anhalt                   3.15092   0.86584  
+overdisp.Thuringia                      10.29723   2.43854  
+
+Epidemic dominant eigenvalue:  0.40 -- 1.52 
+
+Penalized log-likelihood:  -6966.51 
+Marginal log-likelihood:   -91.7 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> 
+> #############################
+> ####### Model ZI1 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~ 1, S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~ 1, S = 2, period = 52)
+> f.zi <- ~ 1
+> 
+> model.ZI1 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   zi = list(f = f.zi),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.ZI1 <- hhh4ZI(measles, model.ZI1)
+> summary(result.ZI1, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4ZI.sts(stsObj = measles, control = model.ZI1)
+
+Coefficients:
+                                        Estimate  Std. Error
+ar.1                                     1.40313   0.04140  
+ar.A(2 * pi * t/52)                      0.10298   0.05697  
+ar.s(2 * pi * t/52)                      1.05776   0.04446  
+ar.A(4 * pi * t/52)                      0.42013   0.05250  
+ar.s(4 * pi * t/52)                      0.03822   0.12262  
+end.1                                    4.22669   0.04823  
+end.A(2 * pi * t/52)                     0.11535   0.04808  
+end.s(2 * pi * t/52)                     1.04557   0.04638  
+end.A(4 * pi * t/52)                     0.41418   0.04918  
+end.s(4 * pi * t/52)                    -0.78739   0.05369  
+zi.1                                    -1.16511   0.17571  
+zi.AR(1)                                -0.49424   0.09117  
+overdisp.Schleswig-Holstein              0.90452   0.19394  
+overdisp.Hamburg                         0.61923   0.17017  
+overdisp.Lower Saxony                    0.84417   0.15134  
+overdisp.Bremen                          3.35087   1.32449  
+overdisp.North Rhine-Westphalia          0.52051   0.07340  
+overdisp.Hesse                           0.65264   0.12539  
+overdisp.Rhineland-Palatinate            0.54338   0.14299  
+overdisp.Baden-Wuerttemberg              0.62884   0.10197  
+overdisp.Bavaria                         0.41186   0.05176  
+overdisp.Saarland                        2.61358   1.57696  
+overdisp.Berlin                          0.63926   0.10738  
+overdisp.Brandenburg                     1.30700   0.32142  
+overdisp.Mecklenburg-Western Pomerania   3.30390   1.97989  
+overdisp.Saxony                          1.52605   0.36748  
+overdisp.Saxony-Anhalt                   2.42124   0.70263  
+overdisp.Thuringia                       8.02656   1.93271  
+
+Epidemic dominant eigenvalue:  0.43 -- 1.43 
+
+Log-likelihood:   -7037.44 
+AIC:              14130.88 
+BIC:              14317.56 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model ZI2 ############
+> #############################
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none"),
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~-1  +  ri(type = "iid", corr = "none"),
++                           S = 2, period = 52)
+> f.zi <- ~-1  +  ri(type = "iid", corr = "none")
+> 
+> model.ZI2 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   zi = list(f = f.zi),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.ZI2 <- hhh4ZI(measles, model.ZI2)
+> summary(result.ZI2, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4ZI.sts(stsObj = measles, control = model.ZI2)
+
+Random effects:
+            Var    Corr   
+ar.ri(iid)  0.0593        
+end.ri(iid) 0.3946 0      
+zi.ri(iid)  1.5605 0    0 
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.12754   0.05649  
+ar.s(2 * pi * t/52)                      1.28835   0.03745  
+ar.A(4 * pi * t/52)                      0.43669   0.05251  
+ar.s(4 * pi * t/52)                      0.07139   0.11833  
+ar.ri(iid)                               1.33887   0.08273  
+end.A(2 * pi * t/52)                     0.12867   0.04767  
+end.s(2 * pi * t/52)                     1.01140   0.04771  
+end.A(4 * pi * t/52)                     0.42581   0.04935  
+end.s(4 * pi * t/52)                    -0.80958   0.05186  
+end.ri(iid)                              4.55428   0.17334  
+zi.AR(1)                                -0.73364   0.11769  
+zi.ri(iid)                              -0.42870   0.35224  
+overdisp.Schleswig-Holstein              0.83105   0.22762  
+overdisp.Hamburg                         0.45534   0.16817  
+overdisp.Lower Saxony                    0.87953   0.18495  
+overdisp.Bremen                          2.84364   1.59456  
+overdisp.North Rhine-Westphalia          0.53240   0.07684  
+overdisp.Hesse                           0.58867   0.13444  
+overdisp.Rhineland-Palatinate            0.57361   0.16155  
+overdisp.Baden-Wuerttemberg              0.61839   0.10966  
+overdisp.Bavaria                         0.44597   0.05652  
+overdisp.Saarland                        0.65763   0.60823  
+overdisp.Berlin                          0.48915   0.09728  
+overdisp.Brandenburg                     0.64190   0.21679  
+overdisp.Mecklenburg-Western Pomerania   0.93200   0.64892  
+overdisp.Saxony                          0.87658   0.25811  
+overdisp.Saxony-Anhalt                   0.53865   0.32161  
+overdisp.Thuringia                       2.44847   0.89269  
+
+Epidemic dominant eigenvalue:  0.80 -- 2.61 
+
+Penalized log-likelihood:  -6914.28 
+Marginal log-likelihood:   -118.74 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model ZI3 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all") ,
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~-1  +  ri(type = "iid", corr = "all"),
++                           S = 2, period = 52)
+> f.zi <- ~-1  +  ri(type = "iid", corr = "all")
+> 
+> model.ZI3 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   zi = list(f = f.zi),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.ZI3 <- hhh4ZI(measles, model.ZI3)
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+> summary(result.ZI3, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4ZI.sts(stsObj = measles, control = model.ZI3)
+
+Random effects:
+            Var    Corr          
+ar.ri(iid)  0.071                
+end.ri(iid) 0.6285 0.299         
+zi.ri(iid)  3.1281 0.6183 0.8636 
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.12416   0.05630  
+ar.s(2 * pi * t/52)                      1.32281   0.03633  
+ar.A(4 * pi * t/52)                      0.44043   0.05253  
+ar.s(4 * pi * t/52)                      0.05734   0.11693  
+ar.ri(iid)                               1.34507   0.08545  
+end.A(2 * pi * t/52)                     0.13673   0.04751  
+end.s(2 * pi * t/52)                     0.99621   0.04848  
+end.A(4 * pi * t/52)                     0.42377   0.04925  
+end.s(4 * pi * t/52)                    -0.82137   0.05131  
+end.ri(iid)                              4.54755   0.20694  
+zi.AR(1)                                -0.81804   0.12939  
+zi.ri(iid)                              -0.81932   0.48191  
+overdisp.Schleswig-Holstein              0.91044   0.21857  
+overdisp.Hamburg                         0.46002   0.16774  
+overdisp.Lower Saxony                    1.00875   0.17520  
+overdisp.Bremen                          3.38360   1.45016  
+overdisp.North Rhine-Westphalia          0.54957   0.07708  
+overdisp.Hesse                           0.64667   0.14738  
+overdisp.Rhineland-Palatinate            0.61948   0.15706  
+overdisp.Baden-Wuerttemberg              0.69805   0.11840  
+overdisp.Bavaria                         0.44605   0.05573  
+overdisp.Saarland                        0.30669   0.33223  
+overdisp.Berlin                          0.49138   0.09601  
+overdisp.Brandenburg                     0.60323   0.20082  
+overdisp.Mecklenburg-Western Pomerania   1.51647   0.90909  
+overdisp.Saxony                          0.84231   0.24795  
+overdisp.Saxony-Anhalt                   0.43658   0.25787  
+overdisp.Thuringia                       2.01651   0.70188  
+
+Epidemic dominant eigenvalue:  1.02 -- 3.31 
+
+Penalized log-likelihood:  -6909.21 
+Marginal log-likelihood:   -111.99 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model ZI4 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none"),
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~-1  +  ri(type = "iid", corr = "none"),
++                           S = 2, period = 52)
+> f.zi <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "none"),
++                           S = 2, period = 52)
+> 
+> model.ZI4 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   zi = list(f = f.zi),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer)
+> 
+> result.ZI4 <- hhh4ZI(measles, model.ZI4)
+> summary(result.ZI4, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4ZI.sts(stsObj = measles, control = model.ZI4)
+
+Random effects:
+            Var    Corr   
+ar.ri(iid)  0.0589        
+end.ri(iid) 0.3389 0      
+zi.ri(iid)  1.3467 0    0 
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.12494   0.05753  
+ar.s(2 * pi * t/52)                      1.22336   0.03920  
+ar.A(4 * pi * t/52)                      0.42947   0.05236  
+ar.s(4 * pi * t/52)                      0.07864   0.12155  
+ar.ri(iid)                               1.35425   0.08304  
+end.A(2 * pi * t/52)                     0.05883   0.06245  
+end.s(2 * pi * t/52)                     1.31777   0.04528  
+end.A(4 * pi * t/52)                     0.37279   0.06467  
+end.s(4 * pi * t/52)                    -0.62439   0.08206  
+end.ri(iid)                              4.56871   0.16367  
+zi.A(2 * pi * t/52)                      0.25989   0.13451  
+zi.s(2 * pi * t/52)                     -2.40206   0.05400  
+zi.A(4 * pi * t/52)                      0.32044   0.13793  
+zi.s(4 * pi * t/52)                      1.55142   0.08691  
+zi.AR(1)                                -0.66236   0.10684  
+zi.ri(iid)                              -0.35598   0.32801  
+overdisp.Schleswig-Holstein              0.86531   0.22232  
+overdisp.Hamburg                         0.45443   0.16558  
+overdisp.Lower Saxony                    0.82515   0.17617  
+overdisp.Bremen                          2.54143   1.53830  
+overdisp.North Rhine-Westphalia          0.50626   0.07456  
+overdisp.Hesse                           0.57457   0.13151  
+overdisp.Rhineland-Palatinate            0.50791   0.15784  
+overdisp.Baden-Wuerttemberg              0.57070   0.10108  
+overdisp.Bavaria                         0.44178   0.05653  
+overdisp.Saarland                        0.71751   0.64229  
+overdisp.Berlin                          0.48956   0.09808  
+overdisp.Brandenburg                     0.66107   0.22432  
+overdisp.Mecklenburg-Western Pomerania   0.91373   0.63183  
+overdisp.Saxony                          0.85551   0.24842  
+overdisp.Saxony-Anhalt                   0.64219   0.39689  
+overdisp.Thuringia                       2.48761   0.92257  
+
+Epidemic dominant eigenvalue:  0.76 -- 2.41 
+
+Penalized log-likelihood:  -6911.89 
+Marginal log-likelihood:   -125.9 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> #############################
+> ####### Model ZI5 ############
+> #############################
+> 
+> f.end <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
++                            S = 2, period = 52)
+> f.ar <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
++                           S = 2, period = 52)
+> f.zi <- addSeason2formula(f = ~-1 +  ri(type = "iid", corr = "all"),
++                           S = 2, period = 52)
+> 
+> model.ZI5 <- list(ar = list(f = f.ar, offset =  Vac0 ),
++                   end = list(f = f.end, offset = population(measles) * Vac0 ),
++                   zi = list(f = f.zi),
++                   data = covarlist,
++                   family = "NegBinM",
++                   optimizer = control.optimizer,
++                   verbose = TRUE)
+> 
+> result.ZI5 <- hhh4ZI(measles, model.ZI5)
+2021-12-02 15:13:53 : Iterative optimization of regression & variance parameters 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 2.241134 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 1.217062 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.1563969 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.2696388 
+Update of variance parameters in iteration  2  unreliable
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.06251715 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.1661393 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.03419844 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.06925921 
+Update of variance parameters in iteration  4  unreliable
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.01364978 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.02363604 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.01009976 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.01627176 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.008629229 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.009630691 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.007073476 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.008084777 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.003970578 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.005017562 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.003165506 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.002635467 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.002219796 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.002719385 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0009483825 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.001781163 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0002244847 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.001392204 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.000847123 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.001014749 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0003854639 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0005761132 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0002438324 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0005211517 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0001716298 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0001875662 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0.0001067945 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0002720222 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 4.981721e-05 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0001686728 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 8.965004e-05 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.0002203795 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 2.343938e-05 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0.00012259 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 4.317621e-05 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0 
+
+Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0 
+Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0 
+
+2021-12-02 15:14:09 : Optimization converged 
+
+> summary(result.ZI5, amplitudeShift = TRUE, maxEV = TRUE)
+
+Call: 
+hhh4ZI.sts(stsObj = measles, control = model.ZI5)
+
+Random effects:
+            Var    Corr          
+ar.ri(iid)  0.0778               
+end.ri(iid) 0.4364 0.2181        
+zi.ri(iid)  1.8721 0.6512 0.7043 
+
+Fixed effects:
+                                        Estimate  Std. Error
+ar.A(2 * pi * t/52)                      0.12177   0.05728  
+ar.s(2 * pi * t/52)                      1.26066   0.03806  
+ar.A(4 * pi * t/52)                      0.43323   0.05253  
+ar.s(4 * pi * t/52)                      0.06921   0.12015  
+ar.ri(iid)                               1.38884   0.08872  
+end.A(2 * pi * t/52)                     0.08040   0.06115  
+end.s(2 * pi * t/52)                     1.19038   0.04913  
+end.A(4 * pi * t/52)                     0.37523   0.06303  
+end.s(4 * pi * t/52)                    -0.68615   0.07576  
+end.ri(iid)                              4.61706   0.18201  
+zi.A(2 * pi * t/52)                      0.21007   0.13509  
+zi.s(2 * pi * t/52)                     -2.42992   0.05165  
+zi.A(4 * pi * t/52)                      0.26030   0.13623  
+zi.s(4 * pi * t/52)                      1.63695   0.08294  
+zi.AR(1)                                -0.72357   0.11440  
+zi.ri(iid)                              -0.36811   0.38209  
+overdisp.Schleswig-Holstein              0.90040   0.21726  
+overdisp.Hamburg                         0.44181   0.16083  
+overdisp.Lower Saxony                    0.92392   0.18837  
+overdisp.Bremen                          3.02084   1.52132  
+overdisp.North Rhine-Westphalia          0.51650   0.07522  
+overdisp.Hesse                           0.60292   0.13742  
+overdisp.Rhineland-Palatinate            0.57263   0.16116  
+overdisp.Baden-Wuerttemberg              0.60543   0.10861  
+overdisp.Bavaria                         0.43823   0.05552  
+overdisp.Saarland                        0.39305   0.39977  
+overdisp.Berlin                          0.48214   0.09488  
+overdisp.Brandenburg                     0.61336   0.20597  
+overdisp.Mecklenburg-Western Pomerania   0.97972   0.73547  
+overdisp.Saxony                          0.83129   0.24160  
+overdisp.Saxony-Anhalt                   0.48482   0.29272  
+overdisp.Thuringia                       2.01475   0.72224  
+
+Epidemic dominant eigenvalue:  0.96 -- 3.04 
+
+Penalized log-likelihood:  -6908.55 
+Marginal log-likelihood:   -121.53 
+
+Number of units:        16 
+Number of time points:  363 
+
+> 
+> 
+> ###########################################################
+> ## Exemplary summary of model ZI3
+> ###########################################################
+> plot(result.ZI3, type = "season", period = 52, components = c("en", "ar"),
++      xlab = "biweek")
+> plotHHH4ZI_maxEV(result.ZI3)
+> plotHHH4ZI_fitted(unit = 1:8,result.ZI3, par.settings = list(mfrow=c(4,2)))
+> plotHHH4ZI_fitted(unit = 9:16,result.ZI3, par.settings = list(mfrow=c(4,2)))
+> plotHHH4ZI_maps(result.ZI3,
++                 which = c("mean", "endemic", "epi.own", "zi"),
++                 zmax = c(NA, NA, NA, 1),
++                 main = c("fitted counts", "endemic", "autoregressive", "ZI probability"),
++                 par.settings = list(add.line = list(col = "white")))
+> plotHHH4ZI_ri(result.ZI3, component = "ar.ri(iid)", main = "epi.own", exp = TRUE)
+> plotHHH4ZI_ri(result.ZI3, component = "end.ri(iid)", main = "endemic", exp = TRUE)
+> plotHHH4ZI_ri(result.ZI3, component = "zi.ri(iid)", main = "zi", exp = TRUE)
+> 
+> ######################################################################
+> # Compare the predictive performance of the models by computing
+> # one-step-ahead predictions to be assessed by proper scoring rules
+> ######################################################################
+> tp <- 261
+> i <- 1
+> type <- "rolling"
+> model_names <- c("P0",
++                  "NB1", "NB2", "NB3",
++                  "ZI1", "ZI2", "ZI3", "ZI4", "ZI5")
+> score_table <- data.frame()
+> score_list <- list()
+> 
+> # forecast
+> for (model_name in model_names){
++   modeli <- get(paste0("result.", model_name))
++   cat("\n--- forecasting with", model_name, "---\n")
++   osai <- oneStepAhead(modeli, tp = tp, type = type, which.start = "final")
++   score_list[[i]] <-
++     scorei <- scores(osai)
++   score_table <- rbind(score_table,
++                        c(colMeans(scorei), sapply(as.data.frame(scorei), max)))
++   i <- i + 1
++ }
+
+--- forecasting with P0 ---
+
+--- forecasting with NB1 ---
+
+--- forecasting with NB2 ---
+
+--- forecasting with NB3 ---
+
+--- forecasting with ZI1 ---
+One-step-ahead prediction @ t = 261 ...
+One-step-ahead prediction @ t = 262 ...
+One-step-ahead prediction @ t = 263 ...
+One-step-ahead prediction @ t = 264 ...
+One-step-ahead prediction @ t = 265 ...
+One-step-ahead prediction @ t = 266 ...
+One-step-ahead prediction @ t = 267 ...
+One-step-ahead prediction @ t = 268 ...
+One-step-ahead prediction @ t = 269 ...
+One-step-ahead prediction @ t = 270 ...
+One-step-ahead prediction @ t = 271 ...
+One-step-ahead prediction @ t = 272 ...
+One-step-ahead prediction @ t = 273 ...
+One-step-ahead prediction @ t = 274 ...
+One-step-ahead prediction @ t = 275 ...
+One-step-ahead prediction @ t = 276 ...
+One-step-ahead prediction @ t = 277 ...
+One-step-ahead prediction @ t = 278 ...
+One-step-ahead prediction @ t = 279 ...
+One-step-ahead prediction @ t = 280 ...
+One-step-ahead prediction @ t = 281 ...
+One-step-ahead prediction @ t = 282 ...
+One-step-ahead prediction @ t = 283 ...
+One-step-ahead prediction @ t = 284 ...
+One-step-ahead prediction @ t = 285 ...
+One-step-ahead prediction @ t = 286 ...
+One-step-ahead prediction @ t = 287 ...
+One-step-ahead prediction @ t = 288 ...
+One-step-ahead prediction @ t = 289 ...
+One-step-ahead prediction @ t = 290 ...
+One-step-ahead prediction @ t = 291 ...
+One-step-ahead prediction @ t = 292 ...
+One-step-ahead prediction @ t = 293 ...
+One-step-ahead prediction @ t = 294 ...
+One-step-ahead prediction @ t = 295 ...
+One-step-ahead prediction @ t = 296 ...
+One-step-ahead prediction @ t = 297 ...
+One-step-ahead prediction @ t = 298 ...
+One-step-ahead prediction @ t = 299 ...
+One-step-ahead prediction @ t = 300 ...
+One-step-ahead prediction @ t = 301 ...
+One-step-ahead prediction @ t = 302 ...
+One-step-ahead prediction @ t = 303 ...
+One-step-ahead prediction @ t = 304 ...
+One-step-ahead prediction @ t = 305 ...
+One-step-ahead prediction @ t = 306 ...
+One-step-ahead prediction @ t = 307 ...
+One-step-ahead prediction @ t = 308 ...
+One-step-ahead prediction @ t = 309 ...
+One-step-ahead prediction @ t = 310 ...
+One-step-ahead prediction @ t = 311 ...
+One-step-ahead prediction @ t = 312 ...
+One-step-ahead prediction @ t = 313 ...
+One-step-ahead prediction @ t = 314 ...
+One-step-ahead prediction @ t = 315 ...
+One-step-ahead prediction @ t = 316 ...
+One-step-ahead prediction @ t = 317 ...
+One-step-ahead prediction @ t = 318 ...
+One-step-ahead prediction @ t = 319 ...
+One-step-ahead prediction @ t = 320 ...
+One-step-ahead prediction @ t = 321 ...
+One-step-ahead prediction @ t = 322 ...
+One-step-ahead prediction @ t = 323 ...
+One-step-ahead prediction @ t = 324 ...
+One-step-ahead prediction @ t = 325 ...
+One-step-ahead prediction @ t = 326 ...
+One-step-ahead prediction @ t = 327 ...
+One-step-ahead prediction @ t = 328 ...
+One-step-ahead prediction @ t = 329 ...
+One-step-ahead prediction @ t = 330 ...
+One-step-ahead prediction @ t = 331 ...
+One-step-ahead prediction @ t = 332 ...
+One-step-ahead prediction @ t = 333 ...
+One-step-ahead prediction @ t = 334 ...
+One-step-ahead prediction @ t = 335 ...
+One-step-ahead prediction @ t = 336 ...
+One-step-ahead prediction @ t = 337 ...
+One-step-ahead prediction @ t = 338 ...
+One-step-ahead prediction @ t = 339 ...
+One-step-ahead prediction @ t = 340 ...
+One-step-ahead prediction @ t = 341 ...
+One-step-ahead prediction @ t = 342 ...
+One-step-ahead prediction @ t = 343 ...
+One-step-ahead prediction @ t = 344 ...
+One-step-ahead prediction @ t = 345 ...
+One-step-ahead prediction @ t = 346 ...
+One-step-ahead prediction @ t = 347 ...
+One-step-ahead prediction @ t = 348 ...
+One-step-ahead prediction @ t = 349 ...
+One-step-ahead prediction @ t = 350 ...
+One-step-ahead prediction @ t = 351 ...
+One-step-ahead prediction @ t = 352 ...
+One-step-ahead prediction @ t = 353 ...
+One-step-ahead prediction @ t = 354 ...
+One-step-ahead prediction @ t = 355 ...
+One-step-ahead prediction @ t = 356 ...
+One-step-ahead prediction @ t = 357 ...
+One-step-ahead prediction @ t = 358 ...
+One-step-ahead prediction @ t = 359 ...
+One-step-ahead prediction @ t = 360 ...
+One-step-ahead prediction @ t = 361 ...
+One-step-ahead prediction @ t = 362 ...
+One-step-ahead prediction @ t = 363 ...
+
+--- forecasting with ZI2 ---
+One-step-ahead prediction @ t = 261 ...
+One-step-ahead prediction @ t = 262 ...
+One-step-ahead prediction @ t = 263 ...
+One-step-ahead prediction @ t = 264 ...
+One-step-ahead prediction @ t = 265 ...
+One-step-ahead prediction @ t = 266 ...
+One-step-ahead prediction @ t = 267 ...
+One-step-ahead prediction @ t = 268 ...
+One-step-ahead prediction @ t = 269 ...
+One-step-ahead prediction @ t = 270 ...
+One-step-ahead prediction @ t = 271 ...
+One-step-ahead prediction @ t = 272 ...
+One-step-ahead prediction @ t = 273 ...
+One-step-ahead prediction @ t = 274 ...
+One-step-ahead prediction @ t = 275 ...
+One-step-ahead prediction @ t = 276 ...
+One-step-ahead prediction @ t = 277 ...
+One-step-ahead prediction @ t = 278 ...
+One-step-ahead prediction @ t = 279 ...
+One-step-ahead prediction @ t = 280 ...
+One-step-ahead prediction @ t = 281 ...
+One-step-ahead prediction @ t = 282 ...
+One-step-ahead prediction @ t = 283 ...
+One-step-ahead prediction @ t = 284 ...
+One-step-ahead prediction @ t = 285 ...
+One-step-ahead prediction @ t = 286 ...
+One-step-ahead prediction @ t = 287 ...
+One-step-ahead prediction @ t = 288 ...
+One-step-ahead prediction @ t = 289 ...
+One-step-ahead prediction @ t = 290 ...
+One-step-ahead prediction @ t = 291 ...
+One-step-ahead prediction @ t = 292 ...
+One-step-ahead prediction @ t = 293 ...
+One-step-ahead prediction @ t = 294 ...
+One-step-ahead prediction @ t = 295 ...
+One-step-ahead prediction @ t = 296 ...
+One-step-ahead prediction @ t = 297 ...
+One-step-ahead prediction @ t = 298 ...
+One-step-ahead prediction @ t = 299 ...
+One-step-ahead prediction @ t = 300 ...
+One-step-ahead prediction @ t = 301 ...
+One-step-ahead prediction @ t = 302 ...
+One-step-ahead prediction @ t = 303 ...
+One-step-ahead prediction @ t = 304 ...
+One-step-ahead prediction @ t = 305 ...
+One-step-ahead prediction @ t = 306 ...
+One-step-ahead prediction @ t = 307 ...
+One-step-ahead prediction @ t = 308 ...
+One-step-ahead prediction @ t = 309 ...
+One-step-ahead prediction @ t = 310 ...
+One-step-ahead prediction @ t = 311 ...
+One-step-ahead prediction @ t = 312 ...
+One-step-ahead prediction @ t = 313 ...
+One-step-ahead prediction @ t = 314 ...
+One-step-ahead prediction @ t = 315 ...
+One-step-ahead prediction @ t = 316 ...
+One-step-ahead prediction @ t = 317 ...
+One-step-ahead prediction @ t = 318 ...
+One-step-ahead prediction @ t = 319 ...
+One-step-ahead prediction @ t = 320 ...
+One-step-ahead prediction @ t = 321 ...
+One-step-ahead prediction @ t = 322 ...
+One-step-ahead prediction @ t = 323 ...
+One-step-ahead prediction @ t = 324 ...
+One-step-ahead prediction @ t = 325 ...
+One-step-ahead prediction @ t = 326 ...
+One-step-ahead prediction @ t = 327 ...
+One-step-ahead prediction @ t = 328 ...
+One-step-ahead prediction @ t = 329 ...
+One-step-ahead prediction @ t = 330 ...
+One-step-ahead prediction @ t = 331 ...
+One-step-ahead prediction @ t = 332 ...
+One-step-ahead prediction @ t = 333 ...
+One-step-ahead prediction @ t = 334 ...
+One-step-ahead prediction @ t = 335 ...
+One-step-ahead prediction @ t = 336 ...
+One-step-ahead prediction @ t = 337 ...
+One-step-ahead prediction @ t = 338 ...
+One-step-ahead prediction @ t = 339 ...
+One-step-ahead prediction @ t = 340 ...
+One-step-ahead prediction @ t = 341 ...
+One-step-ahead prediction @ t = 342 ...
+One-step-ahead prediction @ t = 343 ...
+One-step-ahead prediction @ t = 344 ...
+One-step-ahead prediction @ t = 345 ...
+One-step-ahead prediction @ t = 346 ...
+One-step-ahead prediction @ t = 347 ...
+One-step-ahead prediction @ t = 348 ...
+One-step-ahead prediction @ t = 349 ...
+One-step-ahead prediction @ t = 350 ...
+One-step-ahead prediction @ t = 351 ...
+One-step-ahead prediction @ t = 352 ...
+One-step-ahead prediction @ t = 353 ...
+One-step-ahead prediction @ t = 354 ...
+One-step-ahead prediction @ t = 355 ...
+One-step-ahead prediction @ t = 356 ...
+One-step-ahead prediction @ t = 357 ...
+One-step-ahead prediction @ t = 358 ...
+One-step-ahead prediction @ t = 359 ...
+One-step-ahead prediction @ t = 360 ...
+One-step-ahead prediction @ t = 361 ...
+One-step-ahead prediction @ t = 362 ...
+One-step-ahead prediction @ t = 363 ...
+
+--- forecasting with ZI3 ---
+One-step-ahead prediction @ t = 261 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 262 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 263 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  15  unreliable
+Update of variance parameters in iteration  16  unreliable
+Update of variance parameters in iteration  17  unreliable
+Update of variance parameters in iteration  18  unreliable
+Update of variance parameters in iteration  19  unreliable
+Update of variance parameters in iteration  30  unreliable
+Update of variance parameters in iteration  31  unreliable
+Update of variance parameters in iteration  32  unreliable
+Update of variance parameters in iteration  33  unreliable
+Update of variance parameters in iteration  44  unreliable
+Update of variance parameters in iteration  45  unreliable
+Update of variance parameters in iteration  46  unreliable
+Update of variance parameters in iteration  59  unreliable
+Update of variance parameters in iteration  60  unreliable
+Update of variance parameters in iteration  61  unreliable
+Update of variance parameters in iteration  62  unreliable
+Update of variance parameters in iteration  74  unreliable
+Update of variance parameters in iteration  79  unreliable
+Update of variance parameters in iteration  89  unreliable
+Update of variance parameters in iteration  91  unreliable
+Update of variance parameters in iteration  104  unreliable
+Update of variance parameters in iteration  105  unreliable
+Update of variance parameters in iteration  107  unreliable
+Update of variance parameters in iteration  109  unreliable
+Update of variance parameters in iteration  119  unreliable
+Update of variance parameters in iteration  120  unreliable
+Update of variance parameters in iteration  121  unreliable
+Update of variance parameters in iteration  124  unreliable
+Update of variance parameters in iteration  133  unreliable
+Update of variance parameters in iteration  134  unreliable
+Update of variance parameters in iteration  135  unreliable
+Update of variance parameters in iteration  136  unreliable
+Update of variance parameters in iteration  147  unreliable
+Update of variance parameters in iteration  150  unreliable
+Update of variance parameters in iteration  152  unreliable
+Update of variance parameters in iteration  161  unreliable
+Update of variance parameters in iteration  162  unreliable
+Update of variance parameters in iteration  175  unreliable
+Update of variance parameters in iteration  176  unreliable
+Update of variance parameters in iteration  189  unreliable
+Update of variance parameters in iteration  190  unreliable
+Update of variance parameters in iteration  192  unreliable
+WARNING: No convergence @ t = 263 !
+WARNING: Last fit is used
+One-step-ahead prediction @ t = 264 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  27  unreliable
+Update of variance parameters in iteration  31  unreliable
+Update of variance parameters in iteration  32  unreliable
+Update of variance parameters in iteration  60  unreliable
+Update of variance parameters in iteration  61  unreliable
+Update of variance parameters in iteration  62  unreliable
+Update of variance parameters in iteration  63  unreliable
+Update of variance parameters in iteration  67  unreliable
+Update of variance parameters in iteration  69  unreliable
+Update of variance parameters in iteration  92  unreliable
+Update of variance parameters in iteration  93  unreliable
+Update of variance parameters in iteration  94  unreliable
+Update of variance parameters in iteration  96  unreliable
+Update of variance parameters in iteration  99  unreliable
+Update of variance parameters in iteration  100  unreliable
+Update of variance parameters in iteration  122  unreliable
+Update of variance parameters in iteration  124  unreliable
+Update of variance parameters in iteration  129  unreliable
+One-step-ahead prediction @ t = 265 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 266 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 267 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 268 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 269 ...
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 270 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 271 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 272 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 273 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 274 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 275 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 276 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  14  unreliable
+One-step-ahead prediction @ t = 277 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 278 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 279 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 280 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 281 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+Update of variance parameters in iteration  10  unreliable
+Update of variance parameters in iteration  12  unreliable
+One-step-ahead prediction @ t = 282 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 283 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 284 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 285 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 286 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 287 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  8  unreliable
+Update of variance parameters in iteration  9  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 288 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  8  unreliable
+Update of variance parameters in iteration  9  unreliable
+Update of variance parameters in iteration  11  unreliable
+One-step-ahead prediction @ t = 289 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  7  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 290 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 291 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  8  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 292 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+Update of variance parameters in iteration  8  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 293 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  12  unreliable
+One-step-ahead prediction @ t = 294 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 295 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 296 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 297 ...
+One-step-ahead prediction @ t = 298 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 299 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 300 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 301 ...
+One-step-ahead prediction @ t = 302 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 303 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 304 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 305 ...
+One-step-ahead prediction @ t = 306 ...
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 307 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 308 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 309 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 310 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 311 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 312 ...
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 313 ...
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 314 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 315 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 316 ...
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  8  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 317 ...
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 318 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 319 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 320 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 321 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 322 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 323 ...
+One-step-ahead prediction @ t = 324 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 325 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 326 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 327 ...
+One-step-ahead prediction @ t = 328 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 329 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 330 ...
+One-step-ahead prediction @ t = 331 ...
+One-step-ahead prediction @ t = 332 ...
+One-step-ahead prediction @ t = 333 ...
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 334 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 335 ...
+One-step-ahead prediction @ t = 336 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 337 ...
+One-step-ahead prediction @ t = 338 ...
+One-step-ahead prediction @ t = 339 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 340 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 341 ...
+One-step-ahead prediction @ t = 342 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 343 ...
+One-step-ahead prediction @ t = 344 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 345 ...
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 346 ...
+One-step-ahead prediction @ t = 347 ...
+One-step-ahead prediction @ t = 348 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 349 ...
+One-step-ahead prediction @ t = 350 ...
+One-step-ahead prediction @ t = 351 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 352 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 353 ...
+One-step-ahead prediction @ t = 354 ...
+One-step-ahead prediction @ t = 355 ...
+One-step-ahead prediction @ t = 356 ...
+One-step-ahead prediction @ t = 357 ...
+One-step-ahead prediction @ t = 358 ...
+One-step-ahead prediction @ t = 359 ...
+One-step-ahead prediction @ t = 360 ...
+One-step-ahead prediction @ t = 361 ...
+One-step-ahead prediction @ t = 362 ...
+One-step-ahead prediction @ t = 363 ...
+
+--- forecasting with ZI4 ---
+One-step-ahead prediction @ t = 261 ...
+One-step-ahead prediction @ t = 262 ...
+One-step-ahead prediction @ t = 263 ...
+One-step-ahead prediction @ t = 264 ...
+One-step-ahead prediction @ t = 265 ...
+One-step-ahead prediction @ t = 266 ...
+One-step-ahead prediction @ t = 267 ...
+One-step-ahead prediction @ t = 268 ...
+One-step-ahead prediction @ t = 269 ...
+One-step-ahead prediction @ t = 270 ...
+One-step-ahead prediction @ t = 271 ...
+One-step-ahead prediction @ t = 272 ...
+One-step-ahead prediction @ t = 273 ...
+One-step-ahead prediction @ t = 274 ...
+One-step-ahead prediction @ t = 275 ...
+One-step-ahead prediction @ t = 276 ...
+One-step-ahead prediction @ t = 277 ...
+One-step-ahead prediction @ t = 278 ...
+One-step-ahead prediction @ t = 279 ...
+One-step-ahead prediction @ t = 280 ...
+One-step-ahead prediction @ t = 281 ...
+One-step-ahead prediction @ t = 282 ...
+One-step-ahead prediction @ t = 283 ...
+One-step-ahead prediction @ t = 284 ...
+One-step-ahead prediction @ t = 285 ...
+One-step-ahead prediction @ t = 286 ...
+One-step-ahead prediction @ t = 287 ...
+One-step-ahead prediction @ t = 288 ...
+One-step-ahead prediction @ t = 289 ...
+One-step-ahead prediction @ t = 290 ...
+One-step-ahead prediction @ t = 291 ...
+One-step-ahead prediction @ t = 292 ...
+One-step-ahead prediction @ t = 293 ...
+One-step-ahead prediction @ t = 294 ...
+One-step-ahead prediction @ t = 295 ...
+One-step-ahead prediction @ t = 296 ...
+One-step-ahead prediction @ t = 297 ...
+One-step-ahead prediction @ t = 298 ...
+One-step-ahead prediction @ t = 299 ...
+One-step-ahead prediction @ t = 300 ...
+One-step-ahead prediction @ t = 301 ...
+One-step-ahead prediction @ t = 302 ...
+One-step-ahead prediction @ t = 303 ...
+One-step-ahead prediction @ t = 304 ...
+One-step-ahead prediction @ t = 305 ...
+One-step-ahead prediction @ t = 306 ...
+One-step-ahead prediction @ t = 307 ...
+One-step-ahead prediction @ t = 308 ...
+One-step-ahead prediction @ t = 309 ...
+One-step-ahead prediction @ t = 310 ...
+One-step-ahead prediction @ t = 311 ...
+One-step-ahead prediction @ t = 312 ...
+One-step-ahead prediction @ t = 313 ...
+One-step-ahead prediction @ t = 314 ...
+One-step-ahead prediction @ t = 315 ...
+One-step-ahead prediction @ t = 316 ...
+One-step-ahead prediction @ t = 317 ...
+One-step-ahead prediction @ t = 318 ...
+One-step-ahead prediction @ t = 319 ...
+One-step-ahead prediction @ t = 320 ...
+One-step-ahead prediction @ t = 321 ...
+One-step-ahead prediction @ t = 322 ...
+One-step-ahead prediction @ t = 323 ...
+One-step-ahead prediction @ t = 324 ...
+One-step-ahead prediction @ t = 325 ...
+One-step-ahead prediction @ t = 326 ...
+One-step-ahead prediction @ t = 327 ...
+One-step-ahead prediction @ t = 328 ...
+One-step-ahead prediction @ t = 329 ...
+One-step-ahead prediction @ t = 330 ...
+One-step-ahead prediction @ t = 331 ...
+One-step-ahead prediction @ t = 332 ...
+One-step-ahead prediction @ t = 333 ...
+One-step-ahead prediction @ t = 334 ...
+One-step-ahead prediction @ t = 335 ...
+One-step-ahead prediction @ t = 336 ...
+One-step-ahead prediction @ t = 337 ...
+One-step-ahead prediction @ t = 338 ...
+One-step-ahead prediction @ t = 339 ...
+One-step-ahead prediction @ t = 340 ...
+One-step-ahead prediction @ t = 341 ...
+One-step-ahead prediction @ t = 342 ...
+One-step-ahead prediction @ t = 343 ...
+One-step-ahead prediction @ t = 344 ...
+One-step-ahead prediction @ t = 345 ...
+One-step-ahead prediction @ t = 346 ...
+One-step-ahead prediction @ t = 347 ...
+One-step-ahead prediction @ t = 348 ...
+One-step-ahead prediction @ t = 349 ...
+One-step-ahead prediction @ t = 350 ...
+One-step-ahead prediction @ t = 351 ...
+One-step-ahead prediction @ t = 352 ...
+One-step-ahead prediction @ t = 353 ...
+One-step-ahead prediction @ t = 354 ...
+One-step-ahead prediction @ t = 355 ...
+One-step-ahead prediction @ t = 356 ...
+One-step-ahead prediction @ t = 357 ...
+One-step-ahead prediction @ t = 358 ...
+One-step-ahead prediction @ t = 359 ...
+One-step-ahead prediction @ t = 360 ...
+One-step-ahead prediction @ t = 361 ...
+One-step-ahead prediction @ t = 362 ...
+One-step-ahead prediction @ t = 363 ...
+
+--- forecasting with ZI5 ---
+One-step-ahead prediction @ t = 261 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 262 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 263 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 264 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 265 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 266 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 267 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 268 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 269 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 270 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 271 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 272 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 273 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 274 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 275 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 276 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 277 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 278 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 279 ...
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 280 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 281 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 282 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 283 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 284 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 285 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 286 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 287 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 288 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 289 ...
+Update of variance parameters in iteration  10  unreliable
+One-step-ahead prediction @ t = 290 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 291 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 292 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 293 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 294 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 295 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 296 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 297 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 298 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 299 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 300 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 301 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 302 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 303 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 304 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 305 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 306 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 307 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 308 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 309 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 310 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 311 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 312 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 313 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 314 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 315 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 316 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 317 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 318 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 319 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 320 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 321 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 322 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 323 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 324 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 325 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 326 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 327 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 328 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 329 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 330 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 331 ...
+Update of variance parameters in iteration  1  unreliable
+One-step-ahead prediction @ t = 332 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 333 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 334 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 335 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 336 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 337 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 338 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 339 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 340 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 341 ...
+Update of variance parameters in iteration  2  unreliable
+One-step-ahead prediction @ t = 342 ...
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  6  unreliable
+One-step-ahead prediction @ t = 343 ...
+One-step-ahead prediction @ t = 344 ...
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 345 ...
+Update of variance parameters in iteration  3  unreliable
+One-step-ahead prediction @ t = 346 ...
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 347 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 348 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  8  unreliable
+One-step-ahead prediction @ t = 349 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 350 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 351 ...
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 352 ...
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 353 ...
+Update of variance parameters in iteration  1  unreliable
+Update of variance parameters in iteration  2  unreliable
+Update of variance parameters in iteration  3  unreliable
+Update of variance parameters in iteration  4  unreliable
+One-step-ahead prediction @ t = 354 ...
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 355 ...
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  9  unreliable
+One-step-ahead prediction @ t = 356 ...
+Update of variance parameters in iteration  5  unreliable
+Update of variance parameters in iteration  6  unreliable
+Update of variance parameters in iteration  7  unreliable
+One-step-ahead prediction @ t = 357 ...
+Update of variance parameters in iteration  4  unreliable
+Update of variance parameters in iteration  5  unreliable
+One-step-ahead prediction @ t = 358 ...
+One-step-ahead prediction @ t = 359 ...
+One-step-ahead prediction @ t = 360 ...
+One-step-ahead prediction @ t = 361 ...
+One-step-ahead prediction @ t = 362 ...
+One-step-ahead prediction @ t = 363 ...
+Warning message:
+In hhh4ZI.sts(object$stsObj, control) : Results are not reliable!
+  Try different starting values, more iterations, or another optimizer.
+
+> 
+> ref_score <- score_list[[7]][,1]
+> Test_score <- sapply(score_list, FUN = function(x){
++   permutationTest(x[,1], ref_score, nPermutation = 9999)$pVal.permut
++ })
+> Test_score[7] <- NA
+> colnames(score_table) <- c(colnames(scorei)[1:4], colnames(scorei)[1:4])
+> 
+> printformat <- function(x) {
++   paste0(formatC(round(x, digits = 2), format='f', digits=2 ), " (",rank(x), ")")
++ }
+> printformat2 <- function(x) {
++   round(x, digits = 2)
++ }
+> 
+> score_table2 <- data.frame(model_names, printformat(score_table[,1]),
++                            sapply(Test_score, printformat2),
++                            printformat(score_table[,5]),
++                            printformat(score_table[,3]),
++                            printformat(score_table[,2]),
++                            printformat(score_table[,4]))
+> colnames(score_table2) <- c("Model", "LS", "p-value","maxLS", "DSS","RPS", "SES")
+> print(score_table2)
+  Model       LS p-value    maxLS      DSS      RPS       SES
+1    P0 1.71 (9)    0.00 8.51 (9) 3.24 (9) 1.20 (8) 17.71 (7)
+2   NB1 1.36 (8)    0.00 3.85 (1) 1.88 (6) 1.22 (9) 15.89 (3)
+3   NB2 1.35 (5)    0.01 4.07 (8) 1.94 (8) 1.19 (6) 16.23 (4)
+4   NB3 1.35 (6)    0.01 4.06 (7) 1.94 (7) 1.19 (7) 15.86 (2)
+5   ZI1 1.36 (7)    0.00 3.86 (2) 1.85 (3) 1.18 (5) 15.47 (1)
+6   ZI2 1.34 (3)    0.02 4.05 (6) 1.87 (5) 1.13 (3) 17.66 (6)
+7   ZI3 1.33 (1)      NA 4.04 (5) 1.82 (1) 1.13 (1) 17.20 (5)
+8   ZI4 1.34 (4)    0.03 3.96 (3) 1.86 (4) 1.14 (4) 18.05 (8)
+9   ZI5 1.34 (2)    0.06 3.97 (4) 1.82 (2) 1.13 (2) 18.08 (9)
+> 
+> cat("Time elapsed: ", proc.time() - ptm, "\n")
+Time elapsed:  4870.872 2.532 4875.444 0 0 
+> 

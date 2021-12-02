@@ -1,3 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^develop$
+^demo/.+\.save$
+^demo/Makefile$
