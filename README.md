@@ -1,23 +1,33 @@
 # hhh4ZI
-##
-The [R](https://www.R-project.org/) package **hhh4ZI** implements the
-zero-inflated endemic epidemic model introduced by 
 
-Lu and Meyer. 
-A zero-inflated endemic-epidemic infectious disease model with an application to measles epidemics in Germany.
+The [R](https://www.R-project.org/) package **hhh4ZI** implements the
+statistical model introduced in the manuscript
+*A zero-inflated endemic-epidemic model
+with an application to measles time series in Germany*
+by Junyi Lu and Sebastian Meyer.
 
 ## Installation
 
-To install the HHH4ZI package from the GitHub repository, use:
+To install the **hhh4ZI** package from the GitHub repository, use:
 
 ```R
 ## install.packages("remotes")
 remotes::install_github("Junyi-L/hhh4ZI")
 ```
 
-## Usage
+## Example
 
-Demo of `hhh4ZI()` modelling of measles in Germany - `data("measles")` can be called through 
+A [demo script](demo/measles.R) of `hhh4ZI()` modelling of measles in
+Germany (`data("measles")`) is available as
+
 ```R
-demo(measles)
+system.file("demo", "measles.R", package = "hhh4ZI")
+```
+
+in the installed package.
+To run the *whole* script (which takes around 90 minutes), you could use:
+
+```R
+library("hhh4ZI")
+demo(measles, ask = FALSE)
 ```
