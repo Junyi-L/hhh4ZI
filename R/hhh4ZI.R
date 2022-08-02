@@ -383,6 +383,7 @@ hhh4ZI.sts <- function(stsObj,
                  control=control,
                  terms=if(control$keep.terms) model else NULL,
                  stsObj=stsObj,
+                 ## FIXME: this is still missing max(zi$lag)
                  lags=sapply(control[c("ar","ne")], function (comp)
                    if (comp$inModel) comp$lag else NA_integer_),
                  nObs=sum(!model$isNA[control$subset,]),
@@ -579,8 +580,11 @@ setControl <- function (control, stsObj)
   return(control)
 }
 
-componentsHHH4ZI <- function (object)
-  names(which(sapply(object$control[c("ar", "ne", "end","zi")], "[[", "inModel")))
+componentsHHH4ZI <- function (object) {
+  comps <- c("ar", "ne", "end",
+             if ("zi" %in% names(object$control)) "zi")
+  names(which(vapply(object$control[comps], `[[`, TRUE, "inModel")))
+}
 
 AR <- function(lag){
   stsObj <- get("stsObj", envir = parent.frame(1), inherits = TRUE)

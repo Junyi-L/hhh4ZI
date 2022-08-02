@@ -415,22 +415,20 @@ createLambda <- function (object)
 {
   nTime <- nrow(object$stsObj)
   nUnit <- object$nUnit
-  gamma <- object$gamma
-  ngamma <- nrow(gamma)
-  # gamma can have autoregressive component, and thus time length is different
-  # insert NA's at beginning of gamma
-  if (nTime > ngamma){
-    add_rows <- as.data.frame(matrix(nrow = (nTime - ngamma),
-                                     ncol = nUnit))
-    colnames(add_rows) = colnames(gamma)
-    gamma <- rbind(add_rows,
-                   gamma)
-  }
-  if (identical(componentsHHH4ZI(object), "end")) { # no epidemic components
+  if (all(componentsHHH4ZI(object) %in% c("end", "zi"))) { # no epidemic components
     zeromat <- matrix(0, nUnit, nUnit)
     Lambda <- function (t) zeromat
     attr(Lambda, "type") <- "zero"
     return(Lambda)
+  }
+
+  if (is.null(gamma <- object$gamma)) {
+    gamma <- matrix(0, nTime, 1L)
+  } else if (nTime > (ngamma <- nrow(gamma))) {
+    # gamma can have autoregressive component, and thus time length is different
+    # insert NA's at beginning of gamma
+    gamma <- rbind(matrix(NA_real_, nTime - ngamma, nUnit),
+                   gamma)
   }
 
   exppreds <- surveillance:::get_exppreds_with_offsets(object)
