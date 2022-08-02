@@ -10,13 +10,14 @@ hhh4ZI(object, control, ...)
 
 \method{hhh4ZI}{sts}(
   stsObj,
-  control = list(ar = list(f = ~-1, offset = 1, lag = 1), ne = list(f = ~-1, offset =
-    1, lag = 1, weights = neighbourhood(stsObj) == 1, scale = NULL, normalize = FALSE),
-    end = list(f = ~1, offset = 1), zi = list(f = ~1, lag = 1, lag.unitSpecific = FALSE),
+  control = list(ar = list(f = ~-1, offset = 1, lag = 1), ne = list(f = ~-1, offset = 1,
+    lag = 1, weights = neighbourhood(stsObj) == 1, scale = NULL, normalize = FALSE), end
+    = list(f = ~1, offset = 1), zi = list(f = ~1, lag = 1, lag.unitSpecific = FALSE),
     family = c("NegBin1", "NegBinM"), subset = 2:nrow(stsObj), optimizer = list(stop =
     list(tol = 1e-05, niter = 100), regression = list(method = "nlminb"), variance =
     list(method = "Nelder-Mead")), verbose = FALSE, start = list(fixed = NULL, random =
-    NULL, sd.corr = NULL),      data = list(t = stsObj@epoch - min(stsObj@epoch)),
+    NULL, sd.corr = NULL), 
+     data = list(t = stsObj@epoch - min(stsObj@epoch)),
     keep.terms = FALSE),
   check.analyticals = FALSE,
   ...

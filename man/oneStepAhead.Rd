@@ -17,7 +17,7 @@ oneStepAhead(result, tp, ...)
   type = c("rolling", "first", "final"),
   which.start = c("current", "final"),
   keep.estimates = FALSE,
-  verbose = TRUE,
+  verbose = type != "final",
   cores = 1,
   ...
 )

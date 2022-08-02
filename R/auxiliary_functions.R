@@ -37,17 +37,17 @@
 NULL
 
 #' @rdname Coverage
-#' @format
+#' @format NULL
 "TotalKids"
 
 #' @rdname Coverage
-#' @format
+#' @format NULL
 "VacPass"
 
 #' @rdname Coverage
-#' @format
+#' @format NULL
 "Dosis1"
 
 #' @rdname Coverage
-#' @format
+#' @format NULL
 "Dosis2"

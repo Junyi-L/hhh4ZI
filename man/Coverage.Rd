@@ -25,14 +25,6 @@ Records include information about the receipt of 1st and 2nd doses of MMR,
 from year 2005 to 2018. Note that information from children who did not
 present a vaccination document on the day of the medical examination,
 is not included in the estimated coverage.
-
-
-
-
-
-
-
-
 }
 \source{
 https://www.gbe-bund.de,
