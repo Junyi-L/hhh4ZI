@@ -2,13 +2,10 @@
 % Please edit documentation in R/hhh4ZI.R
 \name{hhh4ZI}
 \alias{hhh4ZI}
-\alias{hhh4ZI.sts}
 \title{Fitting zero-inflated HHH Models with Random Effects
 and Neighbourhood Structure}
 \usage{
-hhh4ZI(object, control, ...)
-
-\method{hhh4ZI}{sts}(
+hhh4ZI(
   stsObj,
   control = list(ar = list(f = ~-1, offset = 1, lag = 1), ne = list(f = ~-1, offset = 1,
     lag = 1, weights = neighbourhood(stsObj) == 1, scale = NULL, normalize = FALSE), end
@@ -19,11 +16,13 @@ hhh4ZI(object, control, ...)
     NULL, sd.corr = NULL), 
      data = list(t = stsObj@epoch - min(stsObj@epoch)),
     keep.terms = FALSE),
-  check.analyticals = FALSE,
-  ...
+  check.analyticals = FALSE
 )
 }
 \arguments{
+\item{stsObj}{object of class \code{"\linkS4class{sts}"} containing the (multivariate)
+count data time series.}
+
 \item{control}{a list containing the model specification and control arguments,
  the parts relating to \code{hhh4} model is the same as in \code{surveillance::hhh4}:
 \itemize{
@@ -170,9 +169,6 @@ reconstructed by the \code{\link{terms}}-method for class
 \code{control}, which are both part of the returned
 \code{"hhh4ZI"} object).}
 }}
-
-\item{stsObj}{object of class \code{"\linkS4class{sts}"} containing the (multivariate)
-count data time series.}
 
 \item{check.analyticals}{{logical (or a subset of
 \code{c("numDeriv", "maxLik")}), indicating if (how) the implemented

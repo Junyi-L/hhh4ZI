@@ -240,40 +240,36 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' @importFrom utils head tail getFromNamespace
 #' @importFrom surveillance observed neighbourhood clapply
 #' @export
-hhh4ZI <- function (object, control, ...) UseMethod("hhh4ZI")
-
-#' @rdname hhh4ZI
-#' @export
-hhh4ZI.sts <- function(stsObj,
-                       control = list(
-                         ar = list(f = ~ -1,        # a formula "exp(x'lamba)*y_t-lag" (ToDo: matrix)
-                                   offset = 1,      # multiplicative offset
-                                   lag = 1),        # autoregression on y_i,t-lag
-                         ne = list(f = ~ -1,        # a formula "exp(x'phi) * sum_j w_ji * y_j,t-lag"
-                                   offset = 1,      # multiplicative offset
-                                   lag = 1,         # regression on y_j,t-lag
-                                   weights = neighbourhood(stsObj) == 1,  # weights w_ji
-                                   scale = NULL,    # such that w_ji = scale * weights
-                                   normalize = FALSE), # w_ji -> w_ji / rowSums(w_ji), after scaling
-                         end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
-                                    offset = 1),    # optional multiplicative offset e_it
-                         zi = list(f = ~ 1,
-                                   lag = 1,         # an (empty) integer vector or NULL
-                                   lag.unitSpecific = FALSE
-                         ),
-                         family = c("NegBin1", "NegBinM"), # or a factor of length nUnit for Negbin
-                         subset = 2:nrow(stsObj),   # epidemic components require Y_{t-lag}
-                         optimizer = list(stop = list(tol = 1e-5, niter = 100), # control arguments
-                                          regression = list(method = "nlminb"), # for optimization
-                                          variance = list(method = "Nelder-Mead")),
-                         verbose = FALSE,           # level of reporting during optimization
-                         start = list(fixed = NULL, # list of start values, replacing initial
-                                      random = NULL,  # values from fe() and ri() in 'f'ormulae
-                                      sd.corr = NULL),
-                         data = list(t = stsObj@epoch - min(stsObj@epoch)), # named list of covariates
-                         keep.terms = FALSE  # whether to keep interpretControl(control, stsObj)
-                       ), check.analyticals = FALSE,
-                       ... # unused (argument of the generic)
+hhh4ZI <- function(stsObj,
+    control = list(
+        ar = list(f = ~ -1,        # a formula "exp(x'lamba)*y_t-lag" (ToDo: matrix)
+                  offset = 1,      # multiplicative offset
+                  lag = 1),        # autoregression on y_i,t-lag
+        ne = list(f = ~ -1,        # a formula "exp(x'phi) * sum_j w_ji * y_j,t-lag"
+                  offset = 1,      # multiplicative offset
+                  lag = 1,         # regression on y_j,t-lag
+                  weights = neighbourhood(stsObj) == 1,  # weights w_ji
+                  scale = NULL,    # such that w_ji = scale * weights
+                  normalize = FALSE), # w_ji -> w_ji / rowSums(w_ji), after scaling
+        end = list(f = ~ 1,        # a formula "exp(x'nu) * n_it"
+                   offset = 1),    # optional multiplicative offset e_it
+        zi = list(f = ~ 1,
+                  lag = 1,         # an (empty) integer vector or NULL
+                  lag.unitSpecific = FALSE
+                  ),
+        family = c("NegBin1", "NegBinM"), # or a factor of length nUnit for Negbin
+        subset = 2:nrow(stsObj),   # epidemic components require Y_{t-lag}
+        optimizer = list(stop = list(tol = 1e-5, niter = 100), # control arguments
+                         regression = list(method = "nlminb"), # for optimization
+                         variance = list(method = "Nelder-Mead")),
+        verbose = FALSE,           # level of reporting during optimization
+        start = list(fixed = NULL, # list of start values, replacing initial
+                     random = NULL,# values from fe() and ri() in 'f'ormulae
+                     sd.corr = NULL),
+        data = list(t = stsObj@epoch - min(stsObj@epoch)), # named list of covariates
+        keep.terms = FALSE         # whether to keep interpretControl(control, stsObj)
+    ),
+    check.analyticals = FALSE
 ){
   ptm <- proc.time()
   ## check control and set default values (for missing arguments)
@@ -407,7 +403,7 @@ setControl <- function (control, stsObj)
   if(nTime <= 2) stop("too few observations")
 
   ## arguments in 'control' override any corresponding default arguments
-  defaultControl <- eval(formals(hhh4ZI.sts)$control)
+  defaultControl <- eval(formals(hhh4ZI)$control)
   environment(defaultControl$ar$f) <- environment(defaultControl$ne$f) <-
     environment(defaultControl$end$f) <-
     environment(defaultControl$zi$f)<- .GlobalEnv
