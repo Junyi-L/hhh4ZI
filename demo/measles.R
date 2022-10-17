@@ -2,12 +2,12 @@
 ### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
 ### based on
 ###
-### Lu and Meyer (2021): A zero-inflated endemic-epidemic model
+### Lu and Meyer (2022): A zero-inflated endemic-epidemic model
 ### with an application to measles time series in Germany.
 ###
 ### RUNNING THE WHOLE SCRIPT TAKES around 90 minutes!
 ###
-### Copyright (C) 2021 Junyi Lu and Sebastian Meyer
+### Copyright (C) 2021-2022 Junyi Lu and Sebastian Meyer
 ###
 ### This file is part of the R package "hhh4ZI",
 ### free software under the terms of the GNU General Public License, version 2,
@@ -231,11 +231,11 @@ summary(result.ZI5, amplitudeShift = TRUE, maxEV = TRUE)
 ###########################################################
 ## Exemplary summary of model ZI3
 ###########################################################
-plot(result.ZI3, type = "season", period = 52, components = c("en", "ar"),
-     xlab = "biweek")
+plotHHH4ZI_season(result.ZI3, components = c("en", "ar"),
+                  period = 52, xlab = "biweek")
 plotHHH4ZI_maxEV(result.ZI3)
-plotHHH4ZI_fitted(unit = 1:8,result.ZI3, par.settings = list(mfrow=c(4,2)))
-plotHHH4ZI_fitted(unit = 9:16,result.ZI3, par.settings = list(mfrow=c(4,2)))
+plotHHH4ZI_fitted(units = 1:8,  result.ZI3, par.settings = list(mfrow=c(4,2)))
+plotHHH4ZI_fitted(units = 9:16, result.ZI3, par.settings = list(mfrow=c(4,2)))
 plotHHH4ZI_maps(result.ZI3,
                 which = c("mean", "endemic", "epi.own", "zi"),
                 zmax = c(NA, NA, NA, 1),
