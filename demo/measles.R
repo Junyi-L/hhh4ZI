@@ -15,6 +15,7 @@
 ################################################################################
 
 library(hhh4ZI)
+options(digits = 5)
 
 # for reproducibility, as ri() parameters are initialized randomly
 RNGversion("3.6.3")
