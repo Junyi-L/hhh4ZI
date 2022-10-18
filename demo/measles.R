@@ -6,12 +6,6 @@
 ### with an application to measles time series in Germany.
 ###
 ### RUNNING THE WHOLE SCRIPT TAKES around 90 minutes!
-###
-### Copyright (C) 2021-2022 Junyi Lu and Sebastian Meyer
-###
-### This file is part of the R package "hhh4ZI",
-### free software under the terms of the GNU General Public License, version 2,
-### a copy of which is available at https://www.R-project.org/Licenses/.
 ################################################################################
 
 library(hhh4ZI)
