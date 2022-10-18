@@ -1,7 +1,7 @@
 Package: hhh4ZI
 Type: Package
 Title: Zero-Inflated Endemic-Epidemic Count Time Series
-Version: 0.2.6
+Version: 0.3.0
 Authors@R: c(person("Junyi", "Lu", role = "aut"),
              person("Sebastian", "Meyer", role = c("cre", "ctb", "cph", "ths"),
                     email = "seb.meyer@fau.de"),
