@@ -1,0 +1,8 @@
+bibentry(
+    bibtype = "Misc",
+    author = c(person("Junyi", "Lu"), person("Sebastian", "Meyer")),
+    title = paste("A zero-inflated endemic-epidemic model",
+                  "with an application to measles time series in {Germany}"),
+    year = "2022"
+    ## FIXME: update once this is published
+)
