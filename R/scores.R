@@ -166,7 +166,7 @@ NULL
 ## adapted from surveillance:::scores.default()
 .scores <- function(x, mu, size = NULL, gamma = NULL,
                            which = c("logs", "rps", "dss", "ses"),
-                           sign = FALSE, ...)
+                           sign = FALSE)
 {
   ## compute individual scores (these have the same dimensions as x)
   scorelist <- lapply(X = setNames(nm = which), FUN = do.call,
@@ -174,9 +174,9 @@ NULL
                       envir = environment())
 
   ## append sign of x-mu
-  if (sign & is.null(gamma))
-    scorelist <- c(scorelist, list("sign" = sign(x-mu))) else if(sign)
-      scorelist <- c(scorelist, list("sign" = sign(x- (1 - gamma)*mu)))
+  if (sign)
+    scorelist <- c(scorelist,
+      list("sign" = if(is.null(gamma)) sign(x-mu) else sign(x - (1-gamma)*mu)))
 
   ## gather scores in an array
   simplify2array(scorelist, higher = TRUE)
@@ -188,9 +188,10 @@ NULL
 #' @importFrom surveillance scores
 #' @export
 scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
-                                 units = NULL, sign = FALSE, individual = FALSE,
-                                 reverse = FALSE, ...)
+                                        units = NULL, sign = FALSE, individual = FALSE,
+                                        ...)
 {
+  chkDots(...)
   y <- x$observed  # observed counts during the prediction window
   mu <- x$mu
   ## transform overdispersion to dnbinom() parameterization
@@ -210,11 +211,6 @@ scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
   result <- .scores(x = y, mu = mu, size = size, gamma = gamma,
                            which = which, sign = sign)
 
-  ## reverse order of the time points (historically)
-  if (reverse) {
-    result <- result[nrow(result):1L,,,drop=FALSE]
-  }
-
   ## average over units if requested
   if (individual) {
     drop(result)
@@ -233,12 +229,7 @@ scores.hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
                          subset = x$control$subset, units = seq_len(x$nUnit),
                          sign = FALSE, ...)
 {
-  ## slow implementation via "fake" oneStepAhead():
-  ##fitted <- oneStepAhead(x, tp = subset[1L] - 1L, type = "final",
-  ##                       keep.estimates = FALSE, verbose = FALSE)
-  ##scores.oneStepAhead(fitted, which = which, units = units, sign = sign,
-  ##                    individual = TRUE, reverse = FALSE)
-
+  chkDots(...)
   result <- .scores(
     x = x$stsObj@observed[subset, units, drop = FALSE],
     mu = x$mu[match(subset, x$control$subset), units, drop = FALSE],
