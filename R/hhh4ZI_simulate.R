@@ -188,7 +188,8 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
   ## W * y = (W[1, ]* y[1]; W[2, ]* y[2]; ...)
 
   ## initialize matrices for means mu_i,t and simulated data y_i,t
-  mu <- y <- omega <- gamma <- matrix(0, nTime, nUnits)
+  mu <- y <- gamma <- matrix(0, nTime, nUnits)
+  omega <- matrix(NA, nTime, nUnits)
   y <- rbind(start, y)
   nStart <- nrow(y) - nrow(mu)        # usually just 1 for lag=1
   timeDependentWeights <- length(dim(neW)) == 3
@@ -201,7 +202,7 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
         colSums(y[nStart+t-lag.gamma,] * gamma_ar) else
           y[nStart+t-lag.gamma,] * gamma_ar)
       } else gamma_end[t,])
-    omega[t,] <- ifelse(runif(nUnits) < gamma[t,], 1, 0)
+    omega[t,] <- runif(nUnits) < gamma[t,]
 
     #browser()
     ## mean mu_i,t = lambda*y_i,t-1 + phi*sum_j wji*y_j,t-1 + nu_i,t
@@ -211,7 +212,7 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
       end[t,]
     ## Sample from NegBin or zero with that mean
     y[nStart+t,] <-
-      ifelse(omega[t,] == 1, rep(0, nUnits),
+      ifelse(omega[t,], rep(0, nUnits),
              rdistr(nUnits, mu[t,]))
 
   }
