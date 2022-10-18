@@ -17,18 +17,21 @@
 ################################################################################
 
 
-### refit hhh4ZI-model
-## ...: arguments modifying the original control list
-## S: a named list to adjust the number of harmonics of the three components
-## subset.upper: refit on a subset of the data up to that time point
-## use.estimates: use fitted parameters as new start values
-
-#' @title update a fitted "hhh4ZI" model
-#' @description Re-fit a \code{hhh4ZI} model with a modified control list.
-#' This function is the equivalent of \code{surveillance::update.hhh4}
-#' for model fits of class
-#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-#' same as in \code{surveillance::update.hhh4}.
+#' @title Refit a \code{hhh4ZI} Model
+#' @description Re-fit a \code{\link{hhh4ZI}} model with a modified control list,
+#' equivalently to \code{\link[surveillance]{update.hhh4}}.
+#' @param object a fitted \code{"\link{hhh4ZI}"} model.
+#' @param ... elements modifying the original control list.
+#' @param S a named list of numeric vectors (with names \code{"ar"},
+#' \code{"end"}, etc) to adjust the number of harmonics in the model components
+#' via \code{\link{addSeason2formula}}, or \code{NULL} (meaning no modification
+#' of seasonal terms).
+#' @param subset.upper refit on a subset of the data up to that time point
+#' (used by \code{\link{oneStepAhead}}).
+#' @param use.estimates logical indicating if \code{coef(object)} should be
+#' used as starting values for the new fit.
+#' @param evaluate logical indicating if the updated \code{hhh4ZI} call should
+#' be evaluated or returned.
 #' @importFrom utils modifyList
 #' @export
 

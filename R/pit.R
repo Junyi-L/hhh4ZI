@@ -33,10 +33,12 @@
   }
 }
 
-
-## pit-methods for oneStepAhead() predictions and "hhh4" fits
-## (similar to the scores-methods)
 #' @title Non-Randomized Version of the PIT Histogram (for Count Data)
+#' @param x an object of class \code{"oneStepAhead_hhh4ZI"} or \code{"hhh4ZI"},
+#' respectively.
+#' @param units integer or character vector indexing the units for which
+#' to compute the PIT histogram. By default, all units are considered.
+#' @param ... further arguments passed to \code{\link[surveillance]{pit.default}}.
 #' @rdname pit
 #' @importFrom surveillance pit
 #' @export
@@ -61,7 +63,10 @@ pit.oneStepAhead_hhh4ZI <- function (x, units = NULL, ...)
 
   }
 }
+
 #' @rdname pit
+#' @param subset subset of time points for which to produce the PIT histogram.
+#' Defaults to the subset used for fitting the model.
 #' @importFrom surveillance pit
 #' @export
 pit.hhh4ZI <- function (x, subset = x$control$subset, units = seq_len(x$nUnit), ...)

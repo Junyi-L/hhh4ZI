@@ -17,12 +17,14 @@
 ### $Date$
 ################################################################################
 
-#' @title Simulate "hhh4ZI" Count Time Series
+#' Simulate \code{hhh4ZI} Count Time Series
 #'
-#' @description This function is the equivalent of \code{surveillance::simulate.hhh4} for model fits of class
-#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-#' same as in \code{surveillance::simulate.hhh4}.
+#' Fork of \code{\link[surveillance]{simulate.hhh4}} to support
+#' zero-inflated models fitted with \code{\link{hhh4ZI}}.
 #'
+#' @inheritParams surveillance::simulate.hhh4
+#' @param object of class \code{"\link{hhh4ZI}"}.
+#' @import stats
 #' @export
 simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
                            nsim=1, # number of replicates to simulate

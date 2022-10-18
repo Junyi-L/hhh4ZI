@@ -15,14 +15,17 @@
 ################################################################################
 
 #' @title Predictive Model Assessment for hhh4ZI Models
-#' @description  The function oneStepAhead computes successive one-step-ahead
-#'  predictions for a (random effects) HHH4ZI model fitted by \code{hhh4ZI.}
-#' This function is the equivalent of \code{surveillance::oneStepAhead}
-#' for model fits of class
-#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-#' same as in \code{surveillance::oneStepAhead}.
-#' Predictions can be inspected using the \code{quantile},
-#' \code{confint} or \code{plot} methods.
+#' @description  Computes successive one-step-ahead predictions from a model fit.
+#' There is a method for \code{\link{hhh4}} models from \pkg{surveillance}
+#' (see the documentation of \code{\link[surveillance]{oneStepAhead}} there)
+#' and a derived method for ZI-extended models fitted from \code{\link{hhh4ZI}}.
+#' The documentation of the arguments is inherited from the former;
+#' where \code{"hhh4"} is mentioned, \code{"hhh4ZI"} works interchangeably.
+#' 
+#' Predictions can be inspected using \code{quantile},
+#' \code{confint} and \code{plot} methods.
+#' @inheritParams surveillance::oneStepAhead
+#' @param ... unused (argument of the generic).
 #' @export
 oneStepAhead <- function (result, tp, ...) UseMethod("oneStepAhead")
 
@@ -301,5 +304,3 @@ plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
   surveillance::fanplot(quantiles = qs, probs = probs, means = ms,
           observed = obs, start = start, ...)
 }
-
-## pit

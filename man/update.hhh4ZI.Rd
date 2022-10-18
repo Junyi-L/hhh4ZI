@@ -2,7 +2,7 @@
 % Please edit documentation in R/hhh4ZI_methods.R
 \name{update.hhh4ZI}
 \alias{update.hhh4ZI}
-\title{update a fitted "hhh4ZI" model}
+\title{Refit a \code{hhh4ZI} Model}
 \usage{
 \method{update}{hhh4ZI}(
   object,
@@ -13,10 +13,26 @@
   evaluate = TRUE
 )
 }
+\arguments{
+\item{object}{a fitted \code{"\link{hhh4ZI}"} model.}
+
+\item{...}{elements modifying the original control list.}
+
+\item{S}{a named list of numeric vectors (with names \code{"ar"},
+\code{"end"}, etc) to adjust the number of harmonics in the model components
+via \code{\link{addSeason2formula}}, or \code{NULL} (meaning no modification
+of seasonal terms).}
+
+\item{subset.upper}{refit on a subset of the data up to that time point
+(used by \code{\link{oneStepAhead}}).}
+
+\item{use.estimates}{logical indicating if \code{coef(object)} should be
+used as starting values for the new fit.}
+
+\item{evaluate}{logical indicating if the updated \code{hhh4ZI} call should
+be evaluated or returned.}
+}
 \description{
-Re-fit a \code{hhh4ZI} model with a modified control list.
-This function is the equivalent of \code{surveillance::update.hhh4}
-for model fits of class
-\code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-same as in \code{surveillance::update.hhh4}.
+Re-fit a \code{\link{hhh4ZI}} model with a modified control list,
+equivalently to \code{\link[surveillance]{update.hhh4}}.
 }

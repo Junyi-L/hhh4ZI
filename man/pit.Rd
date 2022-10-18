@@ -9,6 +9,18 @@
 
 \method{pit}{hhh4ZI}(x, subset = x$control$subset, units = seq_len(x$nUnit), ...)
 }
+\arguments{
+\item{x}{an object of class \code{"oneStepAhead_hhh4ZI"} or \code{"hhh4ZI"},
+respectively.}
+
+\item{units}{integer or character vector indexing the units for which
+to compute the PIT histogram. By default, all units are considered.}
+
+\item{...}{further arguments passed to \code{\link[surveillance]{pit.default}}.}
+
+\item{subset}{subset of time points for which to produce the PIT histogram.
+Defaults to the subset used for fitting the model.}
+}
 \description{
 Non-Randomized Version of the PIT Histogram (for Count Data)
 }

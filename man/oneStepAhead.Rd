@@ -39,13 +39,94 @@ oneStepAhead(result, tp, ...)
 
 \method{plot}{oneStepAhead_hhh4ZI}(x, unit = 1, probs = 1:99/100, start = NULL, ...)
 }
+\arguments{
+\item{result}{fitted \code{\link[surveillance]{hhh4}} model (class \code{"hhh4"}).}
+
+\item{tp}{
+    numeric vector of length 2 specifying the time range in
+    which to compute one-step-ahead predictions (for the time points
+    \code{tp[1]+1}, \ldots, \code{tp[2]+1}).
+    If a single time index is specified, it is interpreted as
+    \code{tp[1]}, and \code{tp[2]} is set to the penultimate time point
+    of \code{result$control$subset}.
+  }
+
+\item{...}{unused (argument of the generic).}
+
+\item{type}{
+    The default \code{"rolling"} procedure sequentially 
+    refits the model up to each time point in \code{tp} and computes
+    the one-step-ahead predictions for the respective next time point.
+    The alternative \code{type}s are no true one-step-ahead predictions
+    but much faster:
+    \code{"first"} will refit the model for the first time point
+    \code{tp[1]} only and use this specific fit to calculate all
+    subsequent predictions, whereas
+    \code{"final"} will just use \code{result} to calculate these.
+    The latter case thus gives nothing else than a subset of
+    \code{result$fitted.values} if the \code{tp}'s are part of the
+    fitted subset \code{result$control$subset}.
+  }
+
+\item{which.start}{
+    Which initial parameter values should be used when successively
+    refitting the model to subsets of the data (up to time point
+    \code{tp[1]}, up to \code{tp[1]+1}, ...) if \code{type="rolling"}?
+    Default (\code{"current"}) is to use the parameter estimates from the
+    previous time point, and \code{"final"} means to always
+    use the estimates from \code{result} as initial values.
+    Alternatively, \code{which.start} can be a list of \code{start}
+    values as expected by \code{\link[surveillance]{hhh4}}, which then replace
+    the corresponding estimates from \code{result} as initial values.
+    This argument is ignored for \dQuote{non-rolling} \code{type}s.
+  }
+
+\item{keep.estimates}{
+    logical indicating if parameter estimates and log-likelihoods from
+    the successive fits should be returned.
+  }
+
+\item{verbose}{
+    non-negative integer (usually in the range \code{0:3}) specifying
+    the amount of tracing information to output.
+    During \code{hhh4} model updates, the following verbosity is used:
+    \code{0} if \code{cores > 1}, otherwise \code{verbose-1} if there
+    is more than one time point to predict, otherwise \code{verbose}.
+  }
+
+\item{cores}{the number of cores to use when computing
+    the predictions for the set of time points \code{tp} in parallel
+    (with \code{\link[parallel]{mclapply}}).
+    Note that parallelization is not possible in the default setting
+    \code{type="rolling"} and \code{which.start="current"} (use
+    \code{which.start="final"} for this to work).}
+
+\item{x}{an object of class \code{"oneStepAhead"} or \code{"hhh4"}.}
+
+\item{probs}{numeric vector of probabilities with values in [0,1].}
+
+\item{object}{an object of class \code{"oneStepAhead"}.}
+
+\item{parm}{unused (argument of the generic).}
+
+\item{level}{required confidence level of the prediction interval.}
+
+\item{unit}{single integer or character selecting a unit for which to
+    produce the plot.}
+
+\item{start}{
+    x-coordinate of the first prediction. If \code{start=NULL}
+    (default), this is derived from \code{x}.
+  }
+}
 \description{
-The function oneStepAhead computes successive one-step-ahead
- predictions for a (random effects) HHH4ZI model fitted by \code{hhh4ZI.}
-This function is the equivalent of \code{surveillance::oneStepAhead}
-for model fits of class
-\code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-same as in \code{surveillance::oneStepAhead}.
-Predictions can be inspected using the \code{quantile},
-\code{confint} or \code{plot} methods.
+Computes successive one-step-ahead predictions from a model fit.
+There is a method for \code{\link{hhh4}} models from \pkg{surveillance}
+(see the documentation of \code{\link[surveillance]{oneStepAhead}} there)
+and a derived method for ZI-extended models fitted from \code{\link{hhh4ZI}}.
+The documentation of the arguments is inherited from the former;
+where \code{"hhh4"} is mentioned, \code{"hhh4ZI"} works interchangeably.
+
+Predictions can be inspected using \code{quantile},
+\code{confint} and \code{plot} methods.
 }

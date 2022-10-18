@@ -146,20 +146,14 @@ rps <- function (x, mu, size=NULL, gamma = NULL, k=40, tolerance=sqrt(.Machine$d
   res
 }
 
-### apply a set of scoring rules at once
-#' @title Proper Scoring Rules for Poisson, Negative Binomial
-#' or Zero-inflated Negative Binomial Predictions
+
+#' @title Proper Scoring Rules for \code{hhh4ZI} Models
 #' @description The following scores are implemented:
 #' logarithmic score (logs), ranked probability score (rps),
 #' Dawid-Sebastiani score (dss), squared error score (ses).
-#' These function are equivalent of \code{surveillance::scores},
-#' \code{surveillance::logs}, \code{surveillance::rps},
-#' \code{surveillance::dss}, \code{surveillance::ses},
-#' further extened for zero-inflated negative binomial predictions.
-#' The arguments for Possion and negative binomial distribution predictions
-#' are the same as in \code{surveillance::update.hhh4},
-#' for zero-inflated negative binomial predictions the zero inflation parameter
-#' \code{gamma} is needed.
+#' These are extended versions of the corresponding frunctions in \pkg{surveillance}
+#' to handle zero-inflated negative binomial predictions,
+#' which use an additional zero inflation parameter \code{gamma}.
 #' @name scores
 NULL
 
@@ -184,6 +178,12 @@ NULL
 
 
 ### apply scoring rules to a set of oneStepAhead() forecasts
+#' @inheritParams surveillance::scores.oneStepAhead
+#' @param x an object of class \code{"oneStepAhead_hhh4ZI"} or \code{"hhh4ZI"},
+#' respectively.
+#' @param units integer or character vector indexing the units for which
+#' to compute the scores. By default, all units are considered.
+#' @param ... unused (argument of the generic).
 #' @rdname scores
 #' @importFrom surveillance scores
 #' @export
@@ -222,6 +222,7 @@ scores.oneStepAhead_hhh4ZI <- function (x, which = c("logs","rps","dss","ses"),
 
 
 ## calculate scores with respect to fitted values
+#' @param subset subset of time points for which to compute the scores.
 #' @rdname scores
 #' @importFrom surveillance scores
 #' @export

@@ -15,13 +15,13 @@
 ### Copyright (C) 2010-2012 Michaela Paul, 2012-2021 Sebastian Meyer
 ################################################################################
 
-#' @title lots for Fitted hhh4ZI-models
+#' Plots for Fitted \code{hhh4ZI} Models
 #'
-#' @description This function is the equivalent of \code{surveillance::plot.hhh4} for model fits of class
-#' \code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-#' same as in \code{surveillance::plot.hhh4}, with one more component option for zero inflation part..
+#' Forks of \code{\link[surveillance]{plot.hhh4}} et al. to support
+#' zero-inflated models fitted with \code{\link{hhh4ZI}}.
 #'
-#' @import graphics
+#' @inheritParams surveillance::plot.hhh4
+#' @param x a fitted \code{\link{hhh4ZI}} object.
 #' @export
 plot.hhh4ZI <- function (x,
                          type = c("fitted", "maxEV", "season", "maps", "ri", "neweights"),
@@ -45,6 +45,7 @@ plot.hhh4ZI <- function (x,
 ###
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices n2mfrow
+#' @import graphics
 #' @export
 plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
                                col = c("grey85", "blue", "orange"),
@@ -135,6 +136,7 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
 
 ### plot estimated component means for a single region
 #' @rdname plot.hhh4ZI
+#' @import graphics
 #' @export
 plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
                                col=c("grey85", "blue", "orange"),
@@ -345,6 +347,7 @@ plotHHH4ZI_maps <- function (x,
 ######
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices n2mfrow
+#' @import graphics
 #' @importFrom sp spplot
 #' @import methods
 #' @export
@@ -584,6 +587,7 @@ ranef.hhh4ZI <- function (object, tomatrix = FALSE, intercept = FALSE, ...)
 ###
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices n2mfrow
+#' @import graphics
 #' @export
 plotHHH4ZI_season <- function (...,
                                components = NULL, intercept = FALSE,

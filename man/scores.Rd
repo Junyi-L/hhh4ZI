@@ -4,8 +4,7 @@
 \alias{scores}
 \alias{scores.oneStepAhead_hhh4ZI}
 \alias{scores.hhh4ZI}
-\title{Proper Scoring Rules for Poisson, Negative Binomial
-or Zero-inflated Negative Binomial Predictions}
+\title{Proper Scoring Rules for \code{hhh4ZI} Models}
 \usage{
 \method{scores}{oneStepAhead_hhh4ZI}(
   x,
@@ -13,7 +12,6 @@ or Zero-inflated Negative Binomial Predictions}
   units = NULL,
   sign = FALSE,
   individual = FALSE,
-  reverse = FALSE,
   ...
 )
 
@@ -26,16 +24,46 @@ or Zero-inflated Negative Binomial Predictions}
   ...
 )
 }
+\arguments{
+\item{x}{an object of class \code{"oneStepAhead_hhh4ZI"} or \code{"hhh4ZI"},
+respectively.}
+
+\item{which}{character vector determining which scores to compute.
+    The package \pkg{surveillance} implements the following proper
+    scoring rules: logarithmic score (\code{"logs"}), ranked probability
+    score (\code{"rps"}), Dawid-Sebastiani score (\code{"dss"}), and
+    squared error score (\code{"ses"}). The normalized SES
+    (\code{"nses"}) is also available but it is improper and hence not
+    computed by default.\cr
+    It is possible to name own scoring rules in \code{which}. These
+    must be functions of \code{(x, mu, size)}, vectorized in all arguments
+    (time x unit matrices) except that \code{size} is \code{NULL}
+    in case of a Poisson model.
+    See the available scoring rules for guidance, e.g., \code{\link[surveillance]{dss}}.
+  }
+
+\item{units}{integer or character vector indexing the units for which
+to compute the scores. By default, all units are considered.}
+
+\item{sign}{logical indicating if the function should also return
+    \code{sign(x-mu)}, i.e., the sign of the difference between
+    the observed counts and corresponding predictions.
+    This does not really make sense when averaging over multiple
+    \code{units} with \code{individual=FALSE}.}
+
+\item{individual}{logical indicating if the individual scores of the
+    \code{units} should be returned. By default (\code{FALSE}), the
+    individual scores are averaged over all \code{units}.}
+
+\item{...}{unused (argument of the generic).}
+
+\item{subset}{subset of time points for which to compute the scores.}
+}
 \description{
 The following scores are implemented:
 logarithmic score (logs), ranked probability score (rps),
 Dawid-Sebastiani score (dss), squared error score (ses).
-These function are equivalent of \code{surveillance::scores},
-\code{surveillance::logs}, \code{surveillance::rps},
-\code{surveillance::dss}, \code{surveillance::ses},
-further extened for zero-inflated negative binomial predictions.
-The arguments for Possion and negative binomial distribution predictions
-are the same as in \code{surveillance::update.hhh4},
-for zero-inflated negative binomial predictions the zero inflation parameter
-\code{gamma} is needed.
+These are extended versions of the corresponding frunctions in \pkg{surveillance}
+to handle zero-inflated negative binomial predictions,
+which use an additional zero inflation parameter \code{gamma}.
 }

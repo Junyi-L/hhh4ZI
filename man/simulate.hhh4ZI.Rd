@@ -2,7 +2,7 @@
 % Please edit documentation in R/hhh4ZI_simulate.R
 \name{simulate.hhh4ZI}
 \alias{simulate.hhh4ZI}
-\title{Simulate "hhh4ZI" Count Time Series}
+\title{Simulate \code{hhh4ZI} Count Time Series}
 \usage{
 \method{simulate}{hhh4ZI}(
   object,
@@ -16,8 +16,65 @@
   ...
 )
 }
+\arguments{
+\item{object}{of class \code{"\link{hhh4ZI}"}.}
+
+\item{nsim}{
+    number of time series to simulate. Defaults to \code{1}.
+  }
+
+\item{seed}{
+    an object specifying how the random number generator should be
+    initialized for simulation (via \code{\link{set.seed}}). The
+    initial state will also be stored as an attribute \code{"seed"} of
+    the result. The original state of the \code{\link{.Random.seed}}
+    will be restored at the end of the simulation.
+    By default (\code{NULL}), neither initialization nor recovery will
+    be done.
+    This behaviour is copied from the \code{\link{simulate}.lm} method.
+  }
+
+\item{y.start}{
+    vector or matrix (with \code{ncol(object$stsObj)} columns) with
+    starting counts for the epidemic components. 
+    If \code{NULL}, the observed means in the respective units of the
+    data in \code{object} during \code{subset} are used.
+  }
+
+\item{subset}{
+    time period in which to simulate data. Defaults to (and cannot
+    exceed) the whole period defined by the underlying \code{"sts"}
+    object.
+  }
+
+\item{coefs}{
+    coefficients used for simulation from the model in \code{object}.
+    Default is to use the fitted parameters.
+    Note that the \code{coefs}-vector must be in the same order and
+    scaling as \code{coef(object)}, which especially means
+    \code{reparamPsi = TRUE} (as per default when using the
+    \code{coef}-method to extract the parameters).
+    The overdispersion parameter in \code{coefs} is the inverse of the
+    dispersion parameter \code{size} in \code{\link{rnbinom}}.
+  }
+
+\item{components}{
+    character vector indicating which components of the fitted model
+    \code{object} should be active during simulation. For instance,
+    a simulation with \code{components="end"} is solely based on the
+    fitted endemic mean.
+  }
+
+\item{simplify}{
+    logical indicating if only the simulated counts (\code{TRUE}) or the
+    full \code{"\linkS4class{sts}"} object (\code{FALSE}) should be
+    returned for every replicate.
+    By default a full \code{"sts"} object is returned iff \code{nsim=1}.
+  }
+
+\item{...}{unused (argument of the generic).}
+}
 \description{
-This function is the equivalent of \code{surveillance::simulate.hhh4} for model fits of class
-\code{hhh4ZI}, obtained from \code{hhh4ZI}. The arguments are the
-same as in \code{surveillance::simulate.hhh4}.
+Fork of \code{\link[surveillance]{simulate.hhh4}} to support
+zero-inflated models fitted with \code{\link{hhh4ZI}}.
 }
