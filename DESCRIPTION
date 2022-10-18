@@ -2,8 +2,13 @@ Package: hhh4ZI
 Type: Package
 Title: Zero-Inflated Endemic-Epidemic Count Time Series
 Version: 0.2.6
-Author: Junyi Lu, Sebastian Meyer
-Maintainer: Junyi Lu <junyi.lu@fau.de>
+Authors@R: c(person("Junyi", "Lu", role = "aut"),
+             person("Sebastian", "Meyer", role = c("cre", "ctb", "cph", "ths"),
+                    email = "seb.meyer@fau.de"),
+             person("Michaela", "Paul", role = "cph"),
+             person("R Core Team", role = "cph",
+                    comment = paste("A few code segments are modified versions",
+                                    "of code from base R")))
 Description: Extending surveillance::hhh4() for zero-inflated infectious disease counts.
 License: GPL-2
 LazyData: true
