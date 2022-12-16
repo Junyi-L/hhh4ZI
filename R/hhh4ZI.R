@@ -856,11 +856,10 @@ gammaZero <- function(theta, model, subset = model$subset, d = 0, .ar = TRUE)
     pred <- pred + X*fe + Z.re
   }
   x <- pred[subset,,drop=FALSE]
-  pred <- setColnames(plogis(x))
-  res <- if(!.ar) x else
-    if(d == 1) gprime(x) else
-      if(d == 2) gprime2(x) else
-        pred
+  res <- if(!.ar) x
+         else if(d == 1) gprime(x)
+         else if(d == 2) gprime2(x)
+         else setColnames(plogis(x))
   return(res)
 
 }
