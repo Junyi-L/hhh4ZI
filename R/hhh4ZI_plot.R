@@ -46,6 +46,7 @@ plot.hhh4ZI <- function (x,
 #' @rdname plot.hhh4ZI
 #' @importFrom grDevices n2mfrow
 #' @import graphics
+#' @importFrom surveillance meanHHH
 #' @export
 plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
                                col = c("grey85", "blue", "orange"),
@@ -67,7 +68,7 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
   gamma <- x$gamma
   if (is.null(meanHHH)) {
     meanHHH <- if (is.null(decompose)) {
-      mean_HHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
+      mean_HHH <- meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
       lapply(mean_HHH[1:5],"*", 1 - gamma)
     } else {
       mean_HHH <- surveillance::decompose.hhh4(x)
@@ -137,6 +138,7 @@ plotHHH4ZI_fitted <- function (x, units = 1, names = NULL,
 ### plot estimated component means for a single region
 #' @rdname plot.hhh4ZI
 #' @import graphics
+#' @importFrom surveillance meanHHH
 #' @export
 plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
                                col=c("grey85", "blue", "orange"),
@@ -178,7 +180,7 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
   ## get fitted component means
   if (is.null(meanHHH)) {
     meanHHH <- if (is.null(decompose)) {
-      mean_HHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
+      mean_HHH <- meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
       lapply(mean_HHH[1:5],"*", 1 - gamma)
     } else {
       mean_HHH <- surveillance::decompose.hhh4(x)
@@ -257,6 +259,7 @@ plotHHH4ZI_fitted1 <- function(x, unit=1, main=NULL,
 #' @importFrom grDevices n2mfrow
 #' @importFrom sp spplot
 #' @import methods
+#' @importFrom surveillance meanHHH
 #' @export
 plotHHH4ZI_maps <- function (x,
                              which = c("mean", "endemic",
@@ -272,7 +275,7 @@ plotHHH4ZI_maps <- function (x,
     ## extract district-specific mean components
   if (is.null(meanHHH)) {
     gamma <- x$gamma
-    meanHHH <- surveillance::meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
+    meanHHH <- meanHHH(x$coefficients, surveillance:::terms.hhh4(x))
     meanHHH <- lapply(meanHHH[1:5],"*", 1 - gamma)
   }
 

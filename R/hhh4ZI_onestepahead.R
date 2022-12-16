@@ -36,6 +36,7 @@ formals(oneStepAhead.hhh4)$... <- substitute()  # consistent with the generic
 
 #' @rdname oneStepAhead
 #' @importFrom utils txtProgressBar setTxtProgressBar
+#' @importFrom surveillance meanHHH
 #' @export
 oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit)
                                 tp,     # scalar: one-step-ahead predictions for time
@@ -127,7 +128,7 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
   ## extract predictions and stuff for specific tp from fit
   getPreds <- function (fit, tp) {
     coefs <- unname(fit$coefficients)
-    mu <- surveillance::meanHHH(coefs, fit$terms, subset=tp+1L, total.only=TRUE)
+    mu <- meanHHH(coefs, fit$terms, subset=tp+1L, total.only=TRUE)
     gamma <- gammaZero(coefs, fit$terms, subset=tp+1L, d = 0)
     mean <- (1 - gamma) * mu
 
@@ -284,6 +285,7 @@ confint.oneStepAhead_hhh4ZI <- function (object, parm, level = 0.95, ...)
 #  plot of one-step-ahead forecasts
 #' @rdname oneStepAhead
 #' @import graphics
+#' @importFrom surveillance fanplot
 #' @export
 plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
                                       start = NULL, ...)
@@ -301,6 +303,6 @@ plot.oneStepAhead_hhh4ZI <- function (x, unit = 1, probs = 1:99/100,
   ## produce fanplot
   if (is.null(start))
     start <- as.integer(rownames(qs)[1L])
-  surveillance::fanplot(quantiles = qs, probs = probs, means = ms,
+  fanplot(quantiles = qs, probs = probs, means = ms,
           observed = obs, start = start, ...)
 }
