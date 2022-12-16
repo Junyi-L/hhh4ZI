@@ -189,10 +189,11 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     in the form \code{c(year,number)}, see \code{"\linkS4class{sts}"}.}
 
 \item{xaxis}{if this is a list (of arguments for
-    \code{\link[surveillance]{addFormattedXAxis}}, the time axis is nicely labelled
+    \code{\link[surveillance]{addFormattedXAxis}}), the time axis is nicely labelled
     similar to \code{\link[surveillance]{stsplot_time}}.
-    Note that in this case, the time indexes \code{1:nrow(x$stsObj)}
-    will be used as x-values in the plot, which is different from the
+    Note that in this case or if \code{xaxis = NA},
+    the basic time indexes \code{1:nrow(x$stsObj)}
+    will be used as x coordinates, which is different from the
     long-standing default (\code{xaxis = NULL}) with a real time scale.}
 
 \item{xlim}{numeric vector of length 2 specifying the x-axis range.
