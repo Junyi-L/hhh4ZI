@@ -25,7 +25,7 @@ system.file("demo", "measles.R", package = "hhh4ZI")
 ```
 
 in the installed package.
-To run the *whole* script (which takes around 90 minutes), you could use:
+To run the *whole* script (which takes around 1 hour), you could use:
 
 ```R
 library("hhh4ZI")

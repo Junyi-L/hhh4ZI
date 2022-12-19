@@ -5,7 +5,7 @@
 ### Lu and Meyer (2022): A zero-inflated endemic-epidemic model
 ### with an application to measles time series in Germany.
 ###
-### RUNNING THE WHOLE SCRIPT TAKES around 90 minutes!
+### RUNNING THE WHOLE SCRIPT TAKES about 1 hour!
 ################################################################################
 
 library(hhh4ZI)
@@ -40,10 +40,10 @@ rm(list = c("PassRate", "Dosis1Rate"))
 covarlist <- list(t = epoch(measles),
                   logVac0 = log(1 - Coverage))
 Vac0 <-  (1 - 0.92 * Coverage)
-# higher niter is needed for forecast procedure
-control.optimizer <-  list(stop = list(tol = 1e-5, niter = 200), # control arguments
-                           regression = list(method = "nlminb"), # for optimization
-                           variance = list(method = "Nelder-Mead"))  # <- or "Nelder-Mead"
+# higher-than-default niter is needed for rolling forecasts
+control.optimizer <-  list(stop = list(tol = 1e-5, niter = 200),
+                           regression = list(method = "nlminb"),
+                           variance = list(method = "Nelder-Mead"))
 
 ##################################################
 # Fit the models
@@ -230,14 +230,14 @@ plotHHH4ZI_season(result.ZI3, components = c("en", "ar"),
 plotHHH4ZI_maxEV(result.ZI3)
 plotHHH4ZI_fitted(units = 1:8,  result.ZI3, par.settings = list(mfrow=c(4,2)))
 plotHHH4ZI_fitted(units = 9:16, result.ZI3, par.settings = list(mfrow=c(4,2)))
-plotHHH4ZI_maps(result.ZI3,
+plotHHH4ZI_maps(result.ZI3, prop = TRUE,
                 which = c("mean", "endemic", "epi.own", "zi"),
-                zmax = c(NA, NA, NA, 1),
-                main = c("fitted counts", "endemic", "autoregressive", "ZI probability"),
+                main = c("fitted counts", "endemic proportion",
+                         "autoregressive proportion", "ZI probability"),
                 par.settings = list(add.line = list(col = "white")))
-plotHHH4ZI_ri(result.ZI3, component = "ar.ri(iid)", main = "epi.own", exp = TRUE)
+plotHHH4ZI_ri(result.ZI3, component = "ar.ri(iid)", main = "autoregressive", exp = TRUE)
 plotHHH4ZI_ri(result.ZI3, component = "end.ri(iid)", main = "endemic", exp = TRUE)
-plotHHH4ZI_ri(result.ZI3, component = "zi.ri(iid)", main = "zi", exp = TRUE)
+plotHHH4ZI_ri(result.ZI3, component = "zi.ri(iid)", main = "zero inflation", exp = TRUE)
 
 ######################################################################
 # Compare the predictive performance of the models by computing
