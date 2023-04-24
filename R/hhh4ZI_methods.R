@@ -105,3 +105,13 @@ update.hhh4ZI <- function (object, ..., S = NULL, subset.upper = NULL,
     control
   }
 }
+
+#' @export
+summary.hhh4ZI <- function (object, maxEV = FALSE, ...)
+{
+  s <- NextMethod(maxEV = FALSE)
+  if (maxEV && inherits(s, "summary.hhh4"))
+      ## use hhh4ZI-specific createLambda()
+      s$maxEV_range <- unique(range(getMaxEV(object), na.rm = TRUE))
+  s
+}
