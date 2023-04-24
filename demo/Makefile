@@ -14,6 +14,6 @@ diff : $(wildcard *.save)
 	$(foreach outfile,$(wildcard $(basename $^)),${R} CMD Rdiff ${outfile} ${outfile}.save;)
 
 clean :
-	rm -f ${DEMOSCRIPTS:.R=.pdf} ${DEMOSCRIPTS:.R=.Rout}
+	rm -f Rplots.pdf ${DEMOSCRIPTS:.R=.pdf} ${DEMOSCRIPTS:.R=.Rout}
 
 .PHONY: all clean diff

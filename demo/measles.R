@@ -2,7 +2,7 @@
 ### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
 ### based on
 ###
-### Lu and Meyer (2022): A zero-inflated endemic-epidemic model
+### Lu and Meyer (2023): A zero-inflated endemic-epidemic model
 ### with an application to measles time series in Germany.
 ###
 ### RUNNING THE WHOLE SCRIPT TAKES about 1 hour!

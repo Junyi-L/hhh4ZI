@@ -1,6 +1,6 @@
 
-R version 4.2.2 Patched (2022-11-10 r83330) -- "Innocent and Trusting"
-Copyright (C) 2022 The R Foundation for Statistical Computing
+R version 4.3.0 (2023-04-21) -- "Already Tomorrow"
+Copyright (C) 2023 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
@@ -21,7 +21,7 @@ Type 'q()' to quit R.
 > ### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
 > ### based on
 > ###
-> ### Lu and Meyer (2022): A zero-inflated endemic-epidemic model
+> ### Lu and Meyer (2023): A zero-inflated endemic-epidemic model
 > ### with an application to measles time series in Germany.
 > ###
 > ### RUNNING THE WHOLE SCRIPT TAKES about 1 hour!
@@ -31,7 +31,8 @@ Type 'q()' to quit R.
 Loading required package: surveillance
 Loading required package: sp
 Loading required package: xtable
-This is surveillance 1.20.3. For overview type ‘help(surveillance)’.
+This is surveillance 1.21.0; see ‘package?surveillance’ or
+https://surveillance.R-Forge.R-project.org/ for an overview.
 
 Attaching package: ‘hhh4ZI’
 
@@ -358,7 +359,7 @@ overdisp.Saxony                          1.5260    0.3675
 overdisp.Saxony-Anhalt                   2.4212    0.7026   
 overdisp.Thuringia                       8.0266    1.9327   
 
-Epidemic dominant eigenvalue:  0.43 -- 1.43 
+Epidemic dominant eigenvalue:  0.34 -- 1.28 
 
 Log-likelihood:   -7037.4 
 AIC:              14131 
@@ -427,7 +428,7 @@ overdisp.Saxony                          0.8766    0.2581
 overdisp.Saxony-Anhalt                   0.5387    0.3216   
 overdisp.Thuringia                       2.4485    0.8927   
 
-Epidemic dominant eigenvalue:  0.80 -- 2.61 
+Epidemic dominant eigenvalue:  0.37 -- 1.51 
 
 Penalized log-likelihood:  -6914.3 
 Marginal log-likelihood:   -118.7 
@@ -498,7 +499,7 @@ overdisp.Saxony                          0.8423    0.2479
 overdisp.Saxony-Anhalt                   0.4366    0.2579   
 overdisp.Thuringia                       2.0166    0.7019   
 
-Epidemic dominant eigenvalue:  1.02 -- 3.31 
+Epidemic dominant eigenvalue:  0.35 -- 1.48 
 
 Penalized log-likelihood:  -6909.2 
 Marginal log-likelihood:   -112 
@@ -572,7 +573,7 @@ overdisp.Saxony                          0.8555    0.2484
 overdisp.Saxony-Anhalt                   0.6422    0.3969   
 overdisp.Thuringia                       2.4876    0.9226   
 
-Epidemic dominant eigenvalue:  0.76 -- 2.41 
+Epidemic dominant eigenvalue:  0.38 -- 1.51 
 
 Penalized log-likelihood:  -6911.9 
 Marginal log-likelihood:   -125.9 
@@ -601,7 +602,7 @@ Number of time points:  363
 +                   verbose = TRUE)
 > 
 > result.ZI5 <- hhh4ZI(measles, model.ZI5)
-2022-12-19 18:41:43 : Iterative optimization of regression & variance parameters 
+2023-04-24 16:12:06.605971 : Iterative optimization of regression & variance parameters 
 
 Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 2.2411 
 Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 1.2171 
@@ -670,7 +671,7 @@ Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0
 Update of regression parameters:  max|x_0 - x_1| / max|x_0| = 0 
 Update of variance parameters:  max|x_0 - x_1| / max|x_0| = 0 
 
-2022-12-19 18:41:52 : Optimization converged 
+2023-04-24 16:12:14.701885 : Optimization converged 
 
 > summary(result.ZI5, amplitudeShift = TRUE, maxEV = TRUE)
 
@@ -718,7 +719,7 @@ overdisp.Saxony                          0.8313    0.2416
 overdisp.Saxony-Anhalt                   0.4848    0.2927   
 overdisp.Thuringia                       2.0148    0.7222   
 
-Epidemic dominant eigenvalue:  0.96 -- 3.04 
+Epidemic dominant eigenvalue:  0.35 -- 1.48 
 
 Penalized log-likelihood:  -6908.6 
 Marginal log-likelihood:   -121.5 
@@ -1413,31 +1414,32 @@ Update of variance parameters in iteration  30  unreliable
 Update of variance parameters in iteration  31  unreliable
 Update of variance parameters in iteration  32  unreliable
 Update of variance parameters in iteration  44  unreliable
-Update of variance parameters in iteration  45  unreliable
-Update of variance parameters in iteration  59  unreliable
-Update of variance parameters in iteration  73  unreliable
-Update of variance parameters in iteration  87  unreliable
-Update of variance parameters in iteration  102  unreliable
-Update of variance parameters in iteration  104  unreliable
-Update of variance parameters in iteration  116  unreliable
-Update of variance parameters in iteration  118  unreliable
-Update of variance parameters in iteration  131  unreliable
-Update of variance parameters in iteration  145  unreliable
+Update of variance parameters in iteration  58  unreliable
+Update of variance parameters in iteration  72  unreliable
+Update of variance parameters in iteration  86  unreliable
+Update of variance parameters in iteration  89  unreliable
+Update of variance parameters in iteration  101  unreliable
+Update of variance parameters in iteration  115  unreliable
+Update of variance parameters in iteration  129  unreliable
+Update of variance parameters in iteration  144  unreliable
+Update of variance parameters in iteration  158  unreliable
 Update of variance parameters in iteration  160  unreliable
+Update of variance parameters in iteration  173  unreliable
 Update of variance parameters in iteration  174  unreliable
-Update of variance parameters in iteration  175  unreliable
+Update of variance parameters in iteration  176  unreliable
 Update of variance parameters in iteration  188  unreliable
+Update of variance parameters in iteration  189  unreliable
 WARNING: No convergence @ t = 263 !
 WARNING: Last fit is used
 One-step-ahead prediction @ t = 264 ...
 Update of variance parameters in iteration  32  unreliable
 Update of variance parameters in iteration  33  unreliable
 Update of variance parameters in iteration  67  unreliable
-Update of variance parameters in iteration  100  unreliable
-Update of variance parameters in iteration  131  unreliable
-Update of variance parameters in iteration  133  unreliable
-Update of variance parameters in iteration  160  unreliable
-Update of variance parameters in iteration  198  unreliable
+Update of variance parameters in iteration  69  unreliable
+Update of variance parameters in iteration  102  unreliable
+Update of variance parameters in iteration  137  unreliable
+Update of variance parameters in iteration  139  unreliable
+Update of variance parameters in iteration  174  unreliable
 WARNING: No convergence @ t = 264 !
 WARNING: Last fit is used
 One-step-ahead prediction @ t = 265 ...
@@ -1911,5 +1913,5 @@ Warning messages:
 9   ZI5 1.34 (2)    0.06 3.97 (4) 1.82 (2) 1.13 (2) 18.08 (9)
 > 
 > cat("Time elapsed: ", proc.time() - ptm, "\n")
-Time elapsed:  2675 1.724 2680.2 0 0 
+Time elapsed:  2579.7 1.479 2581.3 0 0 
 > 
