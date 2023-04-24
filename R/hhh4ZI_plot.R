@@ -437,6 +437,9 @@ createLambda <- function (object)
                    gamma)
   }
 
+  ## ensure correct terms (surveillance < 1.21.0 hard-coded terms.hhh4)
+  if (is.null(object$terms))
+    object$terms <- terms(object)
   exppreds <- surveillance:::get_exppreds_with_offsets(object)
 
   W <- surveillance::getNEweights(object)
