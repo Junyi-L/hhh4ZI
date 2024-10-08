@@ -1,10 +1,12 @@
 # hhh4ZI
 
 The [R](https://www.R-project.org/) package **hhh4ZI** implements the
-statistical model introduced in the manuscript
-*A zero-inflated endemic-epidemic model
-with an application to measles time series in Germany*
-by Junyi Lu and Sebastian Meyer.
+statistical model introduced by:
+
+> Lu J, Meyer S (2023).
+> "A zero-inflated endemic-epidemic model with an application to measles time series in Germany."
+> *Biometrical Journal*, **65**(8), 2100408.
+> <https://doi.org/10.1002/bimj.202100408>
 
 ## Installation
 

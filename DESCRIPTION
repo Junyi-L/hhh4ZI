@@ -9,7 +9,12 @@ Authors@R: c(person("Junyi", "Lu", role = "aut"),
              person("R Core Team", role = "cph",
                     comment = paste("A few code segments are modified versions",
                                     "of code from base R")))
-Description: Extending surveillance::hhh4() for zero-inflated infectious disease counts.
+Description: Extending 'surveillance::hhh4()'
+    for zero-inflated infectious disease counts as described in
+    Lu and Meyer (2023) <doi:10.1002/bimj.202100408>.
+    This package is a partial fork of 'surveillance'
+    and intended as a proof of concept for this model extension.
+    It will be merged with other extensions in the future.
 License: GPL-2
 LazyData: true
 RoxygenNote: 7.2.3

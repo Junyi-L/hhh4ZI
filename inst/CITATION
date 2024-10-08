@@ -1,8 +1,12 @@
 bibentry(
-    bibtype = "Misc",
+    bibtype = "Article",
     author = c(person("Junyi", "Lu"), person("Sebastian", "Meyer")),
     title = paste("A zero-inflated endemic-epidemic model",
                   "with an application to measles time series in {Germany}"),
-    year = "2023"
-    ## FIXME: update once this is published
+    year = "2023",
+    journal = "Biometrical Journal",
+    volume = "65",
+    number = "8",
+    pages = "2100408",
+    doi = "10.1002/bimj.202100408"
 )
