@@ -32,11 +32,11 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' count data time series.
 #' @param control a list containing the model specification and control arguments,
 #'  the parts relating to \code{hhh4} model is the same as in \code{surveillance::hhh4}:
-#' \itemize{
+#' \describe{
 #' \item{\code{ar}}{
 #' Model for the autoregressive component given as
 #' list with the following components:
-#' \itemize{
+#' \describe{
 #' \item{f = ~ -1}{
 #' a formula specifying
 #' \eqn{\log(\lambda_{it})}{log(\lambda_it)}.}
@@ -51,9 +51,9 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' \item{\code{ne}}{
 #' Model for the neighbour-driven component given as
 #'list with the following components:
-#'  \itemize{
+#'  \describe{
 #'   \item{f = ~ -1}{
-#'   a formula specifying \eqn{\log(\phi_{it})}{log(\phi_it)}}.
+#'   a formula specifying \eqn{\log(\phi_{it})}{log(\phi_it)}.}
 #'   \item{offset = 1}{
 #'   optional multiplicative offset, either 1 or
 #'      a matrix of the same dimension as \code{observed(stsObj)}.}
@@ -85,9 +85,9 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' \item{\code{end}}{
 #' Model for the endemic component given as list
 #' with the following components
-#' \itemize{
+#' \describe{
 #' \item{f = ~ 1 }{
-#' a formula specifying \eqn{\log(\nu_{it})}{log(\nu_it)}}.
+#' a formula specifying \eqn{\log(\nu_{it})}{log(\nu_it)}.}
 #' \item{offset = 1 }{
 #' optional multiplicative offset \eqn{e_{it}}{e_it},
 #' either 1 or a matrix of the same dimension as \code{observed(stsObj)}.}
@@ -95,7 +95,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' \item{\code{zi}}{
 #' Model for the zero inflation component given as
 #' list with the following components:
-#' \itemize{
+#' \describe{
 #' \item{f = ~ -1}{
 #' a formula specifying
 #' \eqn{logit(\gamma_{it})}{logit(gamma_it)}.}
@@ -188,7 +188,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' @return \code{hhh4ZI} returns an object of class \code{"hhh4ZI"},
 #' which inherits from class \code{"hhh4"}, and
 #' is a list containing the following components:
-#' \itemize{
+#'
 #' \item{coefficients}{
 #' named vector with estimated (regression) parameters of the model}
 #' \item{se}{
@@ -221,7 +221,7 @@ ADVICEONERROR <- "\n  Try different starting values, more iterations, or another
 #' \item{runtime}{ the \code{\link{proc.time}}-queried time taken
 #'   to fit the model, i.e., a named numeric vector of length 5 of class
 #'   \code{"proc_time"}}
-#' }
+#'
 #' @examples
 #' neW1 <- neighbourhood(measles) == 1
 #' fit <- hhh4ZI(measles,
