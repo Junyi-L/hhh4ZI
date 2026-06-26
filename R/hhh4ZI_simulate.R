@@ -57,7 +57,7 @@ simulate.hhh4ZI <- function (object, # result from a call to hhh4ZI
   ## lags
   lag.ar <- object$control$ar$lag
   lag.ne <- object$control$ne$lag
-  lag.gamma <- object$control$zi$lag
+  lag.gamma <- object$control$zi$lag  # possibly empty
   maxlag <- max(lag.ar, lag.ne, lag.gamma)
 
   ## initial counts
@@ -155,13 +155,14 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
                       neW,    # weight matrix/array for neighbourhood component
                       start,  # starting counts (vector of length nUnits, or
                       # matrix with nUnits columns if lag > 1)
-                      lag.ar = 1,
-                      lag.ne = lag.ar,
-                      lag.gamma = lag.ar){
-
-
+                      lag.ar = 1, # positive integer
+                      lag.ne = lag.ar, # positive integer
+                      lag.gamma = lag.ar) # positive integers, possibly empty
+{
   nTime <- nrow(end)
   nUnits <- ncol(end)
+  if (nGammaLags <- length(lag.gamma))
+    stopifnot(lag.gamma > 0)
 
   ## check and invert psi since rnbinom() uses different parametrization
   size <- if (length(psi) == 0 ||
@@ -199,11 +200,10 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
   for(t in seq_len(nTime)){
     #browser()
     if (timeDependentWeights) neWt <- neW[,,t]
-    gamma[t,] <- plogis(if(lag.gamma[1] > 0) {
-      gamma_end[t,] +  (if(length(lag.gamma) >1)
-        colSums(y[nStart+t-lag.gamma,] * gamma_ar) else
-          y[nStart+t-lag.gamma,] * gamma_ar)
-      } else gamma_end[t,])
+    gammapred <- gamma_end[t,] +
+      .colSums(y[nStart+t-lag.gamma,,drop=FALSE] * gamma_ar,
+               nGammaLags, nUnits)
+    gamma[t,] <- plogis(gammapred)
     omega[t,] <- runif(nUnits) < gamma[t,]
 
     #browser()
@@ -220,7 +220,7 @@ simHHH4ZI <- function(ar,     # lambda_it (nTime x nUnits matrix)
   }
 
   ## return simulated data without initial counts
-  # list(y = y[-seq_len(nStart),,drop=FALSE], mu = mu, omega = omega)
+  # list(y = y[-seq_len(nStart),,drop=FALSE], mu = mu, omega = omega, gamma = gamma)
   y[-seq_len(nStart),,drop=FALSE]
 }
 
