@@ -171,6 +171,8 @@ oneStepAhead.hhh4ZI <- function(result, # hhh4ZI-object (i.e. a hhh4ZI model fit
     .extractFromList <- function (what)
       t(vapply(res, "[[", resTemplate[[what]], what, USE.NAMES=FALSE))
     pred[] <- .extractFromList("pred")
+    gamma[] <- .extractFromList("gamma")
+    mu[] <- .extractFromList("mu")
     if (withPsi)
       psi[] <- .extractFromList("psi")
     if (keep.estimates) {

@@ -1,5 +1,5 @@
 ################################################################################
-### Demo of hhh4ZI() modelling of measles in Germany - data("measles")
+### Demo of hhh4ZI() modelling of measles in Germany --- data("measles")
 ### based on
 ###
 ### Lu and Meyer (2023): A zero-inflated endemic-epidemic model
@@ -9,7 +9,7 @@
 ################################################################################
 
 library(hhh4ZI)
-options(digits = 5)
+options(digits = 5, warn = 1)
 
 # for reproducibility, as ri() parameters are initialized randomly
 RNGversion("3.6.3")
@@ -256,7 +256,8 @@ score_list <- list()
 for (model_name in model_names){
   modeli <- get(paste0("result.", model_name))
   cat("\n--- forecasting with", model_name, "---\n")
-  osai <- oneStepAhead(modeli, tp = tp, type = type, which.start = "final")
+  osai <- oneStepAhead(modeli, tp = tp, type = type, which.start = "final",
+                       cores = 1) # could parallelize but want sequential log
   score_list[[i]] <-
     scorei <- scores(osai)
   score_table <- rbind(score_table,
