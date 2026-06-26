@@ -1,7 +1,7 @@
 #' @title Refit a HHH4 model with a ZI Component
-#' @description Refits a previous \code{\link{hhh4}} fit with a ZI component
+#' @description Refits a previous \code{\link[surveillance]{hhh4}} fit with a ZI component
 #' using \code{\link{hhh4ZI}}.
-#' @param object a \code{"\link{hhh4}"} fit.
+#' @param object a \code{"\link[surveillance]{hhh4}"} fit.
 #' @param control either a list of specifications for the \code{zi} component
 #' of \code{\link{hhh4ZI}} or a \code{hhh4} control list with added \code{zi}
 #' specification.

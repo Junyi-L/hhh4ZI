@@ -24,7 +24,7 @@
 #' @param ... elements modifying the original control list.
 #' @param S a named list of numeric vectors (with names \code{"ar"},
 #' \code{"end"}, etc) to adjust the number of harmonics in the model components
-#' via \code{\link{addSeason2formula}}, or \code{NULL} (meaning no modification
+#' via \code{\link[surveillance]{addSeason2formula}}, or \code{NULL} (meaning no modification
 #' of seasonal terms).
 #' @param subset.upper refit on a subset of the data up to that time point
 #' (used by \code{\link{oneStepAhead}}).

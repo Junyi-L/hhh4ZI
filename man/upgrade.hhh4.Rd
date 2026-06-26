@@ -7,7 +7,7 @@
 \method{upgrade}{hhh4}(object, control = list(f = ~1, lag = 1, lag.unitSpecific = FALSE), ...)
 }
 \arguments{
-\item{object}{a \code{"\link{hhh4}"} fit.}
+\item{object}{a \code{"\link[surveillance]{hhh4}"} fit.}
 
 \item{control}{either a list of specifications for the \code{zi} component
 of \code{\link{hhh4ZI}} or a \code{hhh4} control list with added \code{zi}
@@ -16,6 +16,6 @@ specification.}
 \item{...}{further (non-\code{zi}) control elements.}
 }
 \description{
-Refits a previous \code{\link{hhh4}} fit with a ZI component
+Refits a previous \code{\link[surveillance]{hhh4}} fit with a ZI component
 using \code{\link{hhh4ZI}}.
 }

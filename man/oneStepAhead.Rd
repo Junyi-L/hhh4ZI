@@ -121,7 +121,7 @@ oneStepAhead(result, tp, ...)
 }
 \description{
 Computes successive one-step-ahead predictions from a model fit.
-There is a method for \code{\link{hhh4}} models from \pkg{surveillance}
+There is a method for \code{\link[surveillance]{hhh4}} models from \pkg{surveillance}
 (see the documentation of \code{\link[surveillance]{oneStepAhead}} there)
 and a derived method for ZI-extended models fitted from \code{\link{hhh4ZI}}.
 The documentation of the arguments is inherited from the former;

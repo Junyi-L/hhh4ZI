@@ -20,7 +20,7 @@ hhh4ZI(
 )
 }
 \arguments{
-\item{stsObj}{object of class \code{"\linkS4class{sts}"} containing the (multivariate)
+\item{stsObj}{object of class \code{"\link[surveillance]{sts}"} containing the (multivariate)
 count data time series.}
 
 \item{control}{a list containing the model specification and control arguments,
@@ -60,7 +60,7 @@ list with the following components:
      unweighted sum over the lagged cases of the first-order
      neighbours. See Paul et al (2008) and Meyer and Held (2014)
      for alternative specifications, e.g.,
-     \code{\link{W_powerlaw}}.
+     \code{\link[surveillance]{W_powerlaw}}.
      Time-varying weights are possible by specifying an
      array of \code{dim()} \code{c(nUnits, nUnits, nTime)}, where
      \code{nUnits=ncol(stsObj)} and \code{nTime=nrow(stsObj)}.}
@@ -142,7 +142,7 @@ output during optimization.}
 
 \item{\code{start}}{
 a list of initial parameter values replacing
-initial values set via \code{\link{fe}} and \code{\link{ri}}.
+initial values set via \code{\link[surveillance]{fe}} and \code{\link[surveillance]{ri}}.
 Since \pkg{surveillance} 1.8-2, named vectors are matched
 against the coefficient names in the model (where unmatched
 start values are silently ignored), and need not be complete,
@@ -153,10 +153,10 @@ of parameters as used by the model.}
 
 \item{\code{data}}{
 a named list of covariates that are to be
-included as fixed effects (see \code{\link{fe}}) in any of the 3
+included as fixed effects (see \code{\link[surveillance]{fe}}) in any of the 3
 component formulae.
 By default, the time variable \code{t} is available and used for
-seasonal effects created by \code{\link{addSeason2formula}}.
+seasonal effects created by \code{\link[surveillance]{addSeason2formula}}.
 In general, covariates in this list can be either vectors of
 length \code{nrow(stsObj)} interpreted as time-varying but
 common across all units, or matrices of the same dimension as
