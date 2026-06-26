@@ -17,8 +17,8 @@ Description: Extending 'surveillance::hhh4()'
     It will be merged with other extensions in the future.
 License: GPL-2
 LazyData: true
-RoxygenNote: 7.2.3
 Depends: R (>= 3.6.0), methods, grDevices, graphics, stats, utils,
     surveillance
 Imports: sp, VGAM
 Suggests: numDeriv, maxLik, gridExtra, scales
+Config/roxygen2/version: 8.0.0

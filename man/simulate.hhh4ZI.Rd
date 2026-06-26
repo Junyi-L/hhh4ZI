@@ -67,7 +67,7 @@
 
 \item{simplify}{
     logical indicating if only the simulated counts (\code{TRUE}) or the
-    full \code{"\linkS4class{sts}"} object (\code{FALSE}) should be
+    full \code{"\link[surveillance:sts-class]{sts}"} object (\code{FALSE}) should be
     returned for every replicate.
     By default a full \code{"sts"} object is returned iff \code{nsim=1}.
   }

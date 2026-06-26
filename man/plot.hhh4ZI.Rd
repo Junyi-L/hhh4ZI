@@ -105,7 +105,13 @@ plotHHH4ZI_season(
   period = NULL
 )
 
-plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
+plotHHH4ZI_neweights(
+  x,
+  plotter = boxplot,
+  ...,
+  exclude = if (isTRUE(x$control$ar$inModel)) 0,
+  maxlag = Inf
+)
 }
 \arguments{
 \item{x}{a fitted \code{\link{hhh4ZI}} object.}
@@ -129,7 +135,7 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     \code{plotHHH4_fitted} passes them to \code{plotHHH4_fitted1}, which is called
     sequentially for every unit in \code{units}.\cr
     \code{plotHHH4_maps} and \code{plotHHH4_ri} pass additional arguments to
-    \code{\link{spplot}}, and \code{plotHHH4_neweights} to the
+    \code{\link[sp]{spplot}}, and \code{plotHHH4_neweights} to the
     \code{plotter}.}
 
 \item{units, unit}{integer or character vector specifying a single
@@ -186,7 +192,7 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     estimated and available from \code{x}.}
 
 \item{start, end}{time range to plot specified by vectors of length two
-    in the form \code{c(year,number)}, see \code{"\linkS4class{sts}"}.}
+    in the form \code{c(year,number)}, see \code{"\link[surveillance:sts-class]{sts}"}.}
 
 \item{xaxis}{if this is a list (of arguments for
     \code{\link[surveillance]{addFormattedXAxis}}), the time axis is nicely labelled
@@ -244,9 +250,9 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     \code{\link[surveillance]{layout.labels}}.}
 
 \item{sp.layout}{optional list of additional layout items, see
-    \code{\link{spplot}}.}
+    \code{\link[sp]{spplot}}.}
 
-\item{map}{an object inheriting from \code{"\linkS4class{SpatialPolygons}"}
+\item{map}{an object inheriting from \code{"\link[sp:SpatialPolygons-class]{SpatialPolygons}"}
     with \code{row.names} covering \code{colnames(x)}.}
 
 \item{matplot.args}{list of line style specifications passed to
@@ -284,7 +290,7 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     \code{\link[lattice]{levelplot}}.}
 
 \item{gpar.missing}{list of graphical parameters for
-    \code{\link{sp.polygons}}, applied to regions
+    \code{\link[sp]{sp.polygons}}, applied to regions
     with missing random intercepts, i.e., not included in the model.
     Such extra regions won't be plotted if
     \code{!is.list(gpar.missing)}.}
@@ -314,12 +320,12 @@ plotHHH4ZI_neweights(x, plotter = boxplot, ..., exclude = 0, maxlag = Inf)
     factor variable). It is called as
     \code{plotter(Weight ~ Distance, ...)} and defaults to
     \code{\link{boxplot}}. A useful alternative is, e.g.,
-    \code{\link{stripplot}} from package \pkg{lattice}.}
+    \code{\link[lattice]{stripplot}} from package \pkg{lattice}.}
 
 \item{exclude}{vector of neighbourhood orders to be excluded from
     plotting (passed to \code{\link{factor}}).
-    By default, the neighbourhood weight for order 0 is not
-    shown, which is usually zero anyway.}
+    By default, the neighbourhood weight for order 0 is excluded
+    if the model contains an AR component (when it will usually be zero).}
 
 \item{maxlag}{maximum order of neighbourhood to be assumed when
     computing the \code{\link[surveillance]{nbOrder}} matrix. This additional step is
