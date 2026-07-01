@@ -4,7 +4,8 @@ Title: Zero-Inflated Endemic-Epidemic Count Time Series
 Version: 0.3.3
 Authors@R: c(person("Junyi", "Lu", role = "aut"),
              person("Sebastian", "Meyer", role = c("cre", "ctb", "cph", "ths"),
-                    email = "seb.meyer@fau.de"),
+                    email = "seb.meyer@fau.de",
+                    comment = c(ORCID = "0000-0002-1791-9449")),
              person("Michaela", "Paul", role = "cph"),
              person("R Core Team", role = "cph",
                     comment = paste("A few code segments are modified versions",
