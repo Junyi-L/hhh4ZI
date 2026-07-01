@@ -1,7 +1,9 @@
 # hhh4ZI
 
-The [R](https://www.R-project.org/) package **hhh4ZI** implements the
-statistical model introduced by:
+The [R](https://www.R-project.org/) package **hhh4ZI** implements
+an extension of the endemic-epidemic model from
+[`surveillance::hhh4()`](https://CRAN.R-project.org/package=surveillance/vignettes/hhh4_spacetime.pdf),
+adding a zero-inflation component as described in `citation("hhh4ZI")`:
 
 > Lu J, Meyer S (2023).
 > "A zero-inflated endemic-epidemic model with an application to measles time series in Germany."
@@ -10,12 +12,19 @@ statistical model introduced by:
 
 ## Installation
 
-To install the **hhh4ZI** package from the GitHub repository, use:
+- Directly from the Git repository at Codeberg, using the **remotes** package:
 
-```R
-## install.packages("remotes")
-remotes::install_github("Junyi-L/hhh4ZI")
-```
+  ```R
+  ## install.packages("remotes")
+  remotes::install_git("https://codeberg.org/EE-hub/hhh4ZI")
+  ```
+
+- Or using the automated builds from <https://ee-lib.r-universe.dev/hhh4ZI>:
+
+  ```R
+  setRepositories(name = "CRAN", addURLs = "https://ee-lib.r-universe.dev")
+  install.packages("hhh4ZI")
+  ```
 
 ## Example
 
