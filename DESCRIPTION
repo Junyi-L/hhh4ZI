@@ -1,15 +1,15 @@
 Package: hhh4ZI
-Type: Package
 Title: Zero-Inflated Endemic-Epidemic Count Time Series
 Version: 0.3.3
-Authors@R: c(person("Junyi", "Lu", role = "aut"),
-             person("Sebastian", "Meyer", role = c("cre", "ctb", "cph", "ths"),
-                    email = "seb.meyer@fau.de",
-                    comment = c(ORCID = "0000-0002-1791-9449")),
-             person("Michaela", "Paul", role = "cph"),
-             person("R Core Team", role = "cph",
-                    comment = paste("A few code segments are modified versions",
-                                    "of code from base R")))
+Authors@R: c(
+    person("Junyi", "Lu", role = "aut"),
+    person("Sebastian", "Meyer", role = c("cre", "ctb", "cph", "ths"),
+           email = "seb.meyer@fau.de",
+           comment = c(ORCID = "0000-0002-1791-9449")),
+    person("Michaela", "Paul", role = "cph"),
+    person("R Core Team", role = "cph",
+           comment = paste("A few code segments are modified versions",
+                           "of code from base R")))
 Description: Extending 'surveillance::hhh4()'
     for zero-inflated infectious disease counts as described in
     Lu and Meyer (2023) <doi:10.1002/bimj.202100408>.
@@ -17,6 +17,8 @@ Description: Extending 'surveillance::hhh4()'
     and intended as a proof of concept for this model extension.
     It will be merged with other extensions in the future.
 License: GPL-2
+URL: https://codeberg.org/EE-hub/hhh4ZI, https://ee-lib.r-universe.dev/hhh4ZI
+BugReports: https://codeberg.org/EE-hub/hhh4ZI/issues
 LazyData: true
 Depends: R (>= 3.6.0), methods, grDevices, graphics, stats, utils,
     surveillance

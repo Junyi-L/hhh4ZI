@@ -6,6 +6,10 @@
 - `oneStepAhead()` with `cores > 1` no longer returns missing
   `mu` and `gamma` values.
 
+- The Git repository was moved from
+  <https://github.com/Junyi-L/hhh4ZI> to
+  <https://codeberg.org/EE-hub/hhh4ZI>.
+
 
 ## hhh4ZI 0.3.2 (2023-04-24)
 
